@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Food Tracker" />
+  <title>Food & Drink Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
+    input, select, button { font-family: inherit; }
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.25s ease; }
+
+    .header { background: #1e293b; padding: 20px 20px 0; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 100; }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .date-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; margin-bottom: 2px; }
+    .page-title { font-size: 22px; font-weight: 700; color: #f8fafc; }
+    .goal-btn { background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 12px; text-decoration: underline; }
+    .goal-edit { display: flex; gap: 6px; align-items: center; }
+    .goal-input { width: 70px; padding: 4px 6px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; font-size: 14px; }
+    .goal-set-btn { background: #3b82f6; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 13px; }
+
+    .stats-row { display: flex; align-items: center; gap: 20px; padding-bottom: 20px; }
+    .stats-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { background: #0f172a; border-radius: 10px; padding: 10px 12px; }
+    .stat-label { font-size: 11px; color: #64748b; margin-bottom: 2px; }
+    .stat-value { font-size: 18px; font-weight: 700; }
+    .stat-unit { font-size: 10px; color: #475569; }
+
+    .tabs { display: flex; }
+    .tab-btn { flex: 1; padding: 10px 0; background: transparent; border: none; border-bottom: 2px solid transparent; color: #64748b; cursor: pointer; font-weight: 600; font-size: 13px; }
+    .tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; }
+
+    .content { padding: 16px; }
+
+    .card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+    .card-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+
+    .input-wrap { position: relative; margin-bottom: 10px; }
+    .text-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; outline: none; }
+    .text-input:focus { border-color: #3b82f6; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .num-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; outline: none; }
+    .num-input:focus { border-color: #3b82f6; }
+    select.cat-select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 13px; outline: none; -webkit-appearance: none; }
+    .add-btn { width: 100%; padding: 11px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; }
+    .add-btn.enabled { background: #3b82f6; color: #fff; }
+    .add-btn.disabled { background: #1e3a5f; color: #475569; cursor: default; }
+
+    .autocomplete { position: absolute; top: 110%; left: 0; right: 0; background: #1e293b; border: 1px solid #334155; border-radius: 8px; z-index: 50; overflow: hidden; }
+    .autocomplete-item { padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; border-bottom: 1px solid #0f172a; font-size: 13px; }
+    .autocomplete-item:hover { background: #334155; }
+    .ac-cal { color: #94a3b8; }
+
+    .quick-section { margin-bottom: 16px; }
+    .quick-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .quick-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: #94a3b8; cursor: pointer; font-size: 12px; white-space: nowrap; }
+    .chip:active { background: #334155; }
+    .chip-cal { color: #64748b; }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: #475569; font-size: 14px; line-height: 1.6; }
+    .cat-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .cat-name { font-size: 12px; color: #94a3b8; font-weight: 600; }
+    .cat-total { font-size: 12px; color: #64748b; }
+    .entry-card { background: #1e293b; border-radius: 10px; padding: 10px 14px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .entry-name { font-size: 14px; font-weight: 500; color: #f1f5f9; }
+    .entry-time { font-size: 11px; color: #475569; margin-top: 1px; }
+    .entry-right { display: flex; align-items: center; gap: 10px; }
+    .entry-cal { font-size: 15px; font-weight: 700; color: #94a3b8; }
+    .remove-btn { background: transparent; border: none; color: #475569; cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
+
+    .history-card { background: #1e293b; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+    .history-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .history-label { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+    .history-total { font-size: 13px; font-weight: 700; }
+    .progress-bar-bg { height: 4px; background: #0f172a; border-radius: 2px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const CATEGORIES = ["🍳 Breakfast", "🥗 Lunch", "🍽️ Dinner", "☕ Snack / Drink"];
+const QUICK_ADD = [
+  { name: "Black coffee", cal: 2, category: "☕ Snack / Drink" },
+  { name: "Flat white", cal: 120, category: "☕ Snack / Drink" },
+  { name: "Pint of lager", cal: 182, category: "☕ Snack / Drink" },
+  { name: "Glass of red wine", cal: 125, category: "☕ Snack / Drink" },
+  { name: "Banana", cal: 89, category: "☕ Snack / Drink" },
+  { name: "Chicken breast (150g)", cal: 165, category: "🍽️ Dinner" },
+  { name: "White rice (100g cooked)", cal: 130, category: "🍽️ Dinner" },
+  { name: "Porridge (oats + milk)", cal: 290, category: "🍳 Breakfast" },
+];
+const DEFAULT_GOAL = 2100;
+
+let state = {
+  entries: {},
+  goal: DEFAULT_GOAL,
+  activeTab: "today",
+  formName: "", formCal: "", formCat: CATEGORIES[0],
+  editGoal: false, goalInput: DEFAULT_GOAL,
+  searchText: "",
+};
+
+function loadState() {
+  try { state.entries = JSON.parse(localStorage.getItem("cal_entries") || "{}"); } catch {}
+  const g = parseInt(localStorage.getItem("cal_goal"));
+  if (!isNaN(g) && g > 0) { state.goal = g; state.goalInput = g; }
+}
+
+function saveEntries() { localStorage.setItem("cal_entries", JSON.stringify(state.entries)); }
+
+function getTodayKey() { return new Date().toISOString().slice(0, 10); }
+function formatTime(ts) { return new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); }
+function formatDate(key) {
+  const d = new Date(key + "T12:00:00");
+  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+
+function todayEntries() { return state.entries[getTodayKey()] || []; }
+function todayTotal() { return todayEntries().reduce((s, e) => s + e.cal, 0); }
+
+function addEntry(name, cal, category) {
+  if (!name || !cal || isNaN(cal)) return;
+  const key = getTodayKey();
+  const entry = { id: Date.now() + Math.random(), name, cal: Math.round(cal), category, ts: Date.now() };
+  if (!state.entries[key]) state.entries[key] = [];
+  state.entries[key].push(entry);
+  saveEntries();
+  state.formName = ""; state.formCal = ""; state.searchText = "";
+  render();
+}
+
+function removeEntry(id) {
+  const key = getTodayKey();
+  state.entries[key] = (state.entries[key] || []).filter(e => e.id !== id);
+  saveEntries();
+  render();
+}
+
+function render() {
+  const app = document.getElementById("app");
+  const entries = todayEntries();
+  const total = todayTotal();
+  const remaining = state.goal - total;
+  const pct = Math.min((total / state.goal) * 100, 100);
+  const ringColor = pct < 80 ? "#22c55e" : pct < 100 ? "#f59e0b" : "#ef4444";
+  const remColor = remaining >= 0 ? "#22c55e" : "#ef4444";
+  const circumference = 2 * Math.PI * 33;
+  const offset = circumference * (1 - pct / 100);
+
+  const filtered = state.searchText.length > 1
+    ? QUICK_ADD.filter(q => q.name.toLowerCase().includes(state.searchText.toLowerCase()))
+    : [];
+
+  const grouped = {};
+  CATEGORIES.forEach(c => { grouped[c] = entries.filter(e => e.category === c); });
+
+  const historyDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const k = d.toISOString().slice(0, 10);
+    const t = (state.entries[k] || []).reduce((s, e) => s + e.cal, 0);
+    return { key: k, label: i === 0 ? "Today" : formatDate(k), total: t };
+  });
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <div class="date-label">${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
+          <div class="page-title">Food & Drink</div>
+        </div>
+        <div>
+          ${state.editGoal ? `
+            <div class="goal-edit">
+              <input class="goal-input" type="number" id="goalInput" value="${state.goalInput}" />
+              <button class="goal-set-btn" onclick="setGoal()">Set</button>
+            </div>
+          ` : `
+            <button class="goal-btn" onclick="openGoalEdit()">Goal: ${state.goal.toLocaleString()} kcal</button>
+          `}
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="33" fill="none" stroke="#1e3a5f" stroke-width="8"/>
+          <circle cx="40" cy="40" r="33" fill="none" stroke="${ringColor}" stroke-width="8"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+            stroke-linecap="round" transform="rotate(-90 40 40)" style="transition:stroke-dashoffset 0.5s ease"/>
+          <text x="40" y="38" text-anchor="middle" fill="#f8fafc" font-size="14" font-weight="700">${Math.round(pct)}%</text>
+          <text x="40" y="52" text-anchor="middle" fill="#94a3b8" font-size="9">of goal</text>
+        </svg>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Consumed</div>
+            <div class="stat-value" style="color:#f8fafc">${total.toLocaleString()}</div>
+            <div class="stat-unit">kcal</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">${remaining >= 0 ? "Remaining" : "Over by"}</div>
+            <div class="stat-value" style="color:${remColor}">${Math.abs(remaining).toLocaleString()}</div>
+            <div class="stat-unit">kcal</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn ${state.activeTab === 'today' ? 'active' : ''}" onclick="switchTab('today')">Today</button>
+        <button class="tab-btn ${state.activeTab === 'history' ? 'active' : ''}" onclick="switchTab('history')">History</button>
+      </div>
+    </div>
+
+    ${state.activeTab === 'today' ? `
+    <div class="content fade-in">
+      <div class="card">
+        <div class="card-label">Add item</div>
+        <div class="input-wrap">
+          <input class="text-input" type="text" id="foodName" placeholder="Search quick-add or type food name…" value="${state.formName}" oninput="onSearch(this.value)" autocomplete="off" />
+          ${filtered.length ? `
+            <div class="autocomplete">
+              ${filtered.map(q => `
+                <div class="autocomplete-item" onclick="selectQuick('${q.name.replace(/'/g,"\\'")}',${q.cal},'${q.category.replace(/'/g,"\\'")}')">
+                  <span>${q.name}</span><span class="ac-cal">${q.cal} kcal</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+        <div class="form-row">
+          <input class="num-input" type="number" id="foodCal" placeholder="Calories (kcal)" value="${state.formCal}" oninput="state.formCal=this.value" />
+          <select class="cat-select" id="foodCat" onchange="state.formCat=this.value">
+            ${CATEGORIES.map(c => `<option value="${c}" ${state.formCat === c ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <button class="add-btn ${state.formName && state.formCal ? 'enabled' : 'disabled'}" onclick="submitForm()">Add to log</button>
+      </div>
+
+      <div class="quick-section">
+        <div class="quick-label">Quick add</div>
+        <div class="quick-chips">
+          ${QUICK_ADD.map(q => `
+            <button class="chip" onclick="addEntry('${q.name.replace(/'/g,"\\'")}',${q.cal},'${q.category.replace(/'/g,"\\'")}')">
+              ${q.name} <span class="chip-cal">·${q.cal}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      ${entries.length === 0 ? `
+        <div class="empty-state">Nothing logged yet today.<br>Add an item above or use a quick-add chip.</div>
+      ` : `
+        ${CATEGORIES.map(cat => {
+          const items = grouped[cat];
+          if (!items.length) return '';
+          const catTotal = items.reduce((s, e) => s + e.cal, 0);
+          return `
+            <div style="margin-bottom:14px">
+              <div class="cat-header">
+                <span class="cat-name">${cat}</span>
+                <span class="cat-total">${catTotal} kcal</span>
+              </div>
+              ${items.map(e => `
+                <div class="entry-card">
+                  <div>
+                    <div class="entry-name">${e.name}</div>
+                    <div class="entry-time">${formatTime(e.ts)}</div>
+                  </div>
+                  <div class="entry-right">
+                    <span class="entry-cal">${e.cal}</span>
+                    <button class="remove-btn" onclick="removeEntry(${e.id})">✕</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }).join('')}
+      `}
+    </div>
+    ` : ''}
+
+    ${state.activeTab === 'history' ? `
+    <div class="content fade-in">
+      <div class="quick-label" style="margin-bottom:12px">Last 7 days</div>
+      ${historyDays.map(d => {
+        const p = Math.min((d.total / state.goal) * 100, 100);
+        const c = p < 80 ? "#22c55e" : p < 100 ? "#f59e0b" : "#ef4444";
+        return `
+          <div class="history-card">
+            <div class="history-row">
+              <span class="history-label">${d.label}</span>
+              <span class="history-total" style="color:${d.total ? c : '#475569'}">${d.total ? d.total.toLocaleString() + ' kcal' : '—'}</span>
+            </div>
+            ${d.total > 0 ? `
+              <div class="progress-bar-bg">
+                <div class="progress-bar" style="width:${p}%;background:${c}"></div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('')}
+    </div>
+    ` : ''}
+  `;
+}
+
+function switchTab(tab) { state.activeTab = tab; render(); }
+function openGoalEdit() { state.editGoal = true; render(); document.getElementById("goalInput")?.focus(); }
+function setGoal() {
+  const v = parseInt(document.getElementById("goalInput")?.value);
+  if (!isNaN(v) && v > 0) { state.goal = v; state.goalInput = v; localStorage.setItem("cal_goal", v); }
+  state.editGoal = false; render();
+}
+function onSearch(val) { state.searchText = val; state.formName = val; render(); }
+function selectQuick(name, cal, cat) { state.formName = name; state.formCal = cal; state.formCat = cat; state.searchText = ""; render(); }
+function submitForm() {
+  const name = document.getElementById("foodName")?.value || state.formName;
+  const cal = document.getElementById("foodCal")?.value || state.formCal;
+  const cat = document.getElementById("foodCat")?.value || state.formCat;
+  state.formName = name; state.formCal = cal; state.formCat = cat;
+  addEntry(name, parseFloat(cal), cat);
+}
+
+loadState();
+render();
+</script>
+</body>
+</html>
