@@ -36,7 +36,6 @@
     .tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; }
 
     .content { padding: 16px; }
-
     .card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
     .card-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
 
@@ -80,6 +79,19 @@
     .history-total { font-size: 13px; font-weight: 700; }
     .progress-bar-bg { height: 4px; background: #0f172a; border-radius: 2px; overflow: hidden; }
     .progress-bar { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+    /* Water tracker */
+    .water-card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+    .water-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .water-title { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .water-amount { font-size: 13px; font-weight: 700; color: #38bdf8; }
+    .water-bar-bg { height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+    .water-bar { height: 100%; border-radius: 4px; background: #38bdf8; transition: width 0.4s ease; }
+    .water-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .water-chip { flex: 1; min-width: 60px; padding: 8px 4px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: #38bdf8; cursor: pointer; font-size: 13px; font-weight: 600; text-align: center; }
+    .water-chip:active { background: #0c4a6e; }
+    .water-undo { background: transparent; border: none; color: #475569; cursor: pointer; font-size: 12px; text-decoration: underline; margin-top: 8px; display: block; }
+    .water-complete { color: #22c55e; font-size: 12px; margin-top: 4px; text-align: center; }
   </style>
 </head>
 <body>
@@ -97,6 +109,7 @@ const QUICK_ADD = [
   { name: "Porridge (oats + milk)", cal: 290, category: "🍳 Breakfast" },
 ];
 const DEFAULT_GOAL = 2100;
+const WATER_GOAL_ML = 2500;
 
 let state = {
   entries: {},
@@ -105,15 +118,18 @@ let state = {
   formName: "", formCal: "", formCat: CATEGORIES[0],
   editGoal: false, goalInput: DEFAULT_GOAL,
   searchText: "",
+  water: {},
 };
 
 function loadState() {
   try { state.entries = JSON.parse(localStorage.getItem("cal_entries") || "{}"); } catch {}
+  try { state.water = JSON.parse(localStorage.getItem("cal_water") || "{}"); } catch {}
   const g = parseInt(localStorage.getItem("cal_goal"));
   if (!isNaN(g) && g > 0) { state.goal = g; state.goalInput = g; }
 }
 
 function saveEntries() { localStorage.setItem("cal_entries", JSON.stringify(state.entries)); }
+function saveWater() { localStorage.setItem("cal_water", JSON.stringify(state.water)); }
 
 function getTodayKey() { return new Date().toISOString().slice(0, 10); }
 function formatTime(ts) { return new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); }
@@ -124,6 +140,44 @@ function formatDate(key) {
 
 function todayEntries() { return state.entries[getTodayKey()] || []; }
 function todayTotal() { return todayEntries().reduce((s, e) => s + e.cal, 0); }
+function todayWater() { return state.water[getTodayKey()] || 0; }
+
+function addWater(ml) {
+  const key = getTodayKey();
+  state.water[key] = (state.water[key] || 0) + ml;
+  saveWater();
+  renderWater();
+}
+
+function undoWater() {
+  // Remove last 250ml increment
+  const key = getTodayKey();
+  state.water[key] = Math.max(0, (state.water[key] || 0) - 250);
+  saveWater();
+  renderWater();
+}
+
+function renderWater() {
+  const w = todayWater();
+  const pct = Math.min((w / WATER_GOAL_ML) * 100, 100);
+  const litres = (w / 1000).toFixed(2).replace(/\.?0+$/, '');
+  const goalL = (WATER_GOAL_ML / 1000).toFixed(1);
+
+  const amountEl = document.getElementById("waterAmount");
+  const barEl = document.getElementById("waterBar");
+  const msgEl = document.getElementById("waterMsg");
+
+  if (amountEl) amountEl.textContent = `${litres}L / ${goalL}L`;
+  if (barEl) barEl.style.width = `${pct}%`;
+  if (msgEl) {
+    if (w >= WATER_GOAL_ML) {
+      msgEl.innerHTML = '<span class="water-complete">✓ Goal reached!</span>';
+    } else {
+      const rem = ((WATER_GOAL_ML - w) / 1000).toFixed(2).replace(/\.?0+$/, '');
+      msgEl.innerHTML = `<button class="water-undo" onclick="undoWater()">↩ Undo last</button>`;
+    }
+  }
+}
 
 function addEntry(name, cal, category) {
   if (!name || !cal || isNaN(cal)) return;
@@ -154,10 +208,6 @@ function render() {
   const circumference = 2 * Math.PI * 33;
   const offset = circumference * (1 - pct / 100);
 
-  const filtered = state.searchText.length > 1
-    ? QUICK_ADD.filter(q => q.name.toLowerCase().includes(state.searchText.toLowerCase()))
-    : [];
-
   const grouped = {};
   CATEGORIES.forEach(c => { grouped[c] = entries.filter(e => e.category === c); });
 
@@ -165,8 +215,14 @@ function render() {
     const d = new Date(); d.setDate(d.getDate() - i);
     const k = d.toISOString().slice(0, 10);
     const t = (state.entries[k] || []).reduce((s, e) => s + e.cal, 0);
-    return { key: k, label: i === 0 ? "Today" : formatDate(k), total: t };
+    const w = state.water[k] || 0;
+    return { key: k, label: i === 0 ? "Today" : formatDate(k), total: t, water: w };
   });
+
+  const w = todayWater();
+  const wPct = Math.min((w / WATER_GOAL_ML) * 100, 100);
+  const wL = (w / 1000).toFixed(2).replace(/\.?0+$/, '') || '0';
+  const goalL = (WATER_GOAL_ML / 1000).toFixed(1);
 
   app.innerHTML = `
     <div class="header">
@@ -218,19 +274,31 @@ function render() {
 
     ${state.activeTab === 'today' ? `
     <div class="content fade-in">
+
+      <!-- Water tracker -->
+      <div class="water-card">
+        <div class="water-top">
+          <span class="water-title">💧 Water</span>
+          <span class="water-amount" id="waterAmount">${wL}L / ${goalL}L</span>
+        </div>
+        <div class="water-bar-bg">
+          <div class="water-bar" id="waterBar" style="width:${wPct}%"></div>
+        </div>
+        <div class="water-chips">
+          <button class="water-chip" onclick="addWater(550)">+550ml</button>
+        </div>
+        <div id="waterMsg">${w >= WATER_GOAL_ML
+          ? '<span class="water-complete">✓ Goal reached!</span>'
+          : '<button class="water-undo" onclick="undoWater()">↩ Undo last</button>'
+        }</div>
+      </div>
+
+      <!-- Food form -->
       <div class="card">
-        <div class="card-label">Add item</div>
+        <div class="card-label">Add food / drink</div>
         <div class="input-wrap">
-          <input class="text-input" type="text" id="foodName" placeholder="Search quick-add or type food name…" value="${state.formName}" oninput="onSearch(this.value)" autocomplete="off" />
-          ${filtered.length ? `
-            <div class="autocomplete">
-              ${filtered.map(q => `
-                <div class="autocomplete-item" onclick="selectQuick('${q.name.replace(/'/g,"\\'")}',${q.cal},'${q.category.replace(/'/g,"\\'")}')">
-                  <span>${q.name}</span><span class="ac-cal">${q.cal} kcal</span>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
+          <input class="text-input" type="text" id="foodName" placeholder="Search quick-add or type food name…" value="${state.formName}" oninput="onSearch(this.value)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          <div id="autocompleteWrap"></div>
         </div>
         <div class="form-row">
           <input class="num-input" type="number" id="foodCal" placeholder="Calories (kcal)" value="${state.formCal}" oninput="state.formCal=this.value" />
@@ -290,6 +358,8 @@ function render() {
       ${historyDays.map(d => {
         const p = Math.min((d.total / state.goal) * 100, 100);
         const c = p < 80 ? "#22c55e" : p < 100 ? "#f59e0b" : "#ef4444";
+        const wp = Math.min((d.water / WATER_GOAL_ML) * 100, 100);
+        const wL = d.water ? (d.water / 1000).toFixed(1) + 'L' : '—';
         return `
           <div class="history-card">
             <div class="history-row">
@@ -297,8 +367,17 @@ function render() {
               <span class="history-total" style="color:${d.total ? c : '#475569'}">${d.total ? d.total.toLocaleString() + ' kcal' : '—'}</span>
             </div>
             ${d.total > 0 ? `
-              <div class="progress-bar-bg">
+              <div class="progress-bar-bg" style="margin-bottom:8px">
                 <div class="progress-bar" style="width:${p}%;background:${c}"></div>
+              </div>
+            ` : ''}
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:11px;color:#64748b">💧 Water</span>
+              <span style="font-size:12px;font-weight:600;color:${d.water >= WATER_GOAL_ML ? '#22c55e' : '#38bdf8'}">${wL}</span>
+            </div>
+            ${d.water > 0 ? `
+              <div class="progress-bar-bg">
+                <div class="progress-bar" style="width:${wp}%;background:#38bdf8"></div>
               </div>
             ` : ''}
           </div>
@@ -316,8 +395,26 @@ function setGoal() {
   if (!isNaN(v) && v > 0) { state.goal = v; state.goalInput = v; localStorage.setItem("cal_goal", v); }
   state.editGoal = false; render();
 }
-function onSearch(val) { state.searchText = val; state.formName = val; render(); }
-function selectQuick(name, cal, cat) { state.formName = name; state.formCal = cal; state.formCat = cat; state.searchText = ""; render(); }
+function onSearch(val) {
+  state.searchText = val;
+  state.formName = val;
+  const filtered = val.length > 1 ? QUICK_ADD.filter(q => q.name.toLowerCase().includes(val.toLowerCase())) : [];
+  const wrap = document.getElementById("autocompleteWrap");
+  if (wrap) {
+    wrap.innerHTML = filtered.length ? `<div class="autocomplete">${filtered.map(q => `<div class="autocomplete-item" onclick="selectQuick('${q.name.replace(/'/g,"\\'")}',${q.cal},'${q.category.replace(/'/g,"\\'")}')"><span>${q.name}</span><span class="ac-cal">${q.cal} kcal</span></div>`).join('')}</div>` : '';
+  }
+}
+function selectQuick(name, cal, cat) {
+  state.formName = name; state.formCal = cal; state.formCat = cat; state.searchText = "";
+  const nameEl = document.getElementById("foodName");
+  const calEl = document.getElementById("foodCal");
+  const catEl = document.getElementById("foodCat");
+  if (nameEl) nameEl.value = name;
+  if (calEl) calEl.value = cal;
+  if (catEl) catEl.value = cat;
+  const wrap = document.getElementById("autocompleteWrap");
+  if (wrap) wrap.innerHTML = "";
+}
 function submitForm() {
   const name = document.getElementById("foodName")?.value || state.formName;
   const cal = document.getElementById("foodCal")?.value || state.formCal;
