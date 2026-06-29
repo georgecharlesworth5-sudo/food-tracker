@@ -93,6 +93,21 @@
     .water-undo { background: transparent; border: none; color: #475569; cursor: pointer; font-size: 12px; text-decoration: underline; margin-top: 8px; display: block; }
     .water-complete { color: #22c55e; font-size: 12px; margin-top: 4px; text-align: center; display: block; }
 
+    /* Fasting timer */
+    .fast-card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+    .fast-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .fast-title { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .fast-status { font-size: 12px; font-weight: 600; }
+    .fast-countdown { text-align: center; margin-bottom: 12px; }
+    .fast-time { font-size: 42px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .fast-sublabel { font-size: 11px; color: #64748b; margin-top: 4px; }
+    .fast-bar-bg { height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+    .fast-bar { height: 100%; border-radius: 4px; transition: width 1s ease; }
+    .fast-btn { width: 100%; padding: 11px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; }
+    .fast-btn-start { background: #f59e0b; color: #000; }
+    .fast-btn-stop { background: #334155; color: #94a3b8; }
+    .fast-started { font-size: 11px; color: #64748b; text-align: center; margin-top: 8px; }
+
     /* Weight */
     .weight-hero { text-align: center; padding: 24px 0 20px; }
     .weight-current { font-size: 56px; font-weight: 800; color: #f8fafc; letter-spacing: -2px; line-height: 1; }
@@ -151,14 +166,18 @@ let state = {
   formName: "", formCal: "", formCat: CATEGORIES[0],
   editGoal: false, goalInput: DEFAULT_GOAL, searchText: "",
   water: {}, weightLog: [], weightInput: 105.0,
+  fastStart: null,
 };
 
 function loadState() {
   try { state.entries = JSON.parse(localStorage.getItem("cal_entries") || "{}"); } catch {}
   try { state.water = JSON.parse(localStorage.getItem("cal_water") || "{}"); } catch {}
   try { state.weightLog = JSON.parse(localStorage.getItem("cal_weight") || "[]"); } catch {}
+  state.fastStart = localStorage.getItem("cal_fast_start") ? parseInt(localStorage.getItem("cal_fast_start")) : null;
   const g = parseInt(localStorage.getItem("cal_goal"));
   if (!isNaN(g) && g > 0) { state.goal = g; state.goalInput = g; }
+  // Restart fast tick if active
+  if (state.fastStart) startFastTick();
   // Set weight input to last logged weight or start weight
   if (state.weightLog.length > 0) {
     state.weightInput = state.weightLog[state.weightLog.length - 1].kg;
@@ -201,6 +220,69 @@ function deleteWeight(date) {
   state.weightLog = state.weightLog.filter(e => e.date !== date);
   saveWeight();
   render();
+}
+
+function startFast() {
+  state.fastStart = Date.now();
+  localStorage.setItem("cal_fast_start", state.fastStart);
+  startFastTick();
+  renderFast();
+}
+
+function stopFast() {
+  state.fastStart = null;
+  localStorage.removeItem("cal_fast_start");
+  if (window._fastTimer) { clearInterval(window._fastTimer); window._fastTimer = null; }
+  renderFast();
+}
+
+function startFastTick() {
+  if (window._fastTimer) clearInterval(window._fastTimer);
+  window._fastTimer = setInterval(renderFast, 1000);
+}
+
+function renderFast() {
+  const el = document.getElementById("fastCard");
+  if (!el) { if (window._fastTimer) clearInterval(window._fastTimer); return; }
+  const FAST_MS = 15 * 60 * 60 * 1000;
+  if (!state.fastStart) {
+    el.innerHTML = `
+      <div class="fast-top">
+        <span class="fast-title">⏱ Fasting Timer</span>
+        <span class="fast-status" style="color:#64748b">Not started</span>
+      </div>
+      <div class="fast-countdown">
+        <div class="fast-time" style="color:#475569">15:00</div>
+        <div class="fast-sublabel">15 hour countdown</div>
+      </div>
+      <div class="fast-bar-bg"><div class="fast-bar" style="width:0%;background:#f59e0b"></div></div>
+      <button class="fast-btn fast-btn-start" onclick="startFast()">Start fast</button>
+    `;
+    return;
+  }
+  const elapsed = Date.now() - state.fastStart;
+  const remaining = Math.max(FAST_MS - elapsed, 0);
+  const pct = Math.min((elapsed / FAST_MS) * 100, 100);
+  const done = remaining === 0;
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  const timeStr = done ? "Complete!" : `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const color = done ? "#22c55e" : pct > 80 ? "#a78bfa" : "#f59e0b";
+  const startedAt = new Date(state.fastStart).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  el.innerHTML = `
+    <div class="fast-top">
+      <span class="fast-title">⏱ Fasting Timer</span>
+      <span class="fast-status" style="color:${color}">${done ? "✓ Goal reached!" : "Active"}</span>
+    </div>
+    <div class="fast-countdown">
+      <div class="fast-time" style="color:${color}">${timeStr}</div>
+      <div class="fast-sublabel">${done ? "15 hours complete 🎉" : "remaining of 15 hours"}</div>
+    </div>
+    <div class="fast-bar-bg"><div class="fast-bar" style="width:${pct}%;background:${color}"></div></div>
+    <button class="fast-btn fast-btn-stop" onclick="stopFast()">End fast</button>
+    <div class="fast-started">Started at ${startedAt}</div>
+  `;
 }
 
 function addWater(ml) {
@@ -372,6 +454,8 @@ function render() {
     <!-- TODAY TAB -->
     ${state.activeTab === 'today' ? `
     <div class="content fade-in">
+      <div class="fast-card" id="fastCard"></div>
+
       <div class="water-card">
         <div class="water-top">
           <span class="water-title">💧 Water</span>
@@ -555,7 +639,7 @@ function render() {
   `;
 }
 
-function switchTab(tab) { state.activeTab = tab; render(); }
+function switchTab(tab) { state.activeTab = tab; render(); renderFast(); }
 function openGoalEdit() { state.editGoal = true; render(); document.getElementById("goalInput")?.focus(); }
 function setGoal() {
   const v = parseInt(document.getElementById("goalInput")?.value);
@@ -591,6 +675,7 @@ function submitForm() {
 
 loadState();
 render();
+renderFast();
 </script>
 </body>
 </html>
