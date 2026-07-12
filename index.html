@@ -184,7 +184,7 @@ const START_WEIGHT = 105;
 const TARGET_WEIGHT = 100;
 
 let state = {
-  entries: {}, goal: DEFAULT_GOAL, activeTab: "today",
+  entries: {}, goal: DEFAULT_GOAL, activeTab: "meals",
   formName: "", formCal: "", formCat: CATEGORIES[0],
   editGoal: false, goalInput: DEFAULT_GOAL, searchText: "",
   water: {}, weightLog: [], weightInput: 105.0,
@@ -484,14 +484,6 @@ function render() {
   const grouped = {};
   CATEGORIES.forEach(c => { grouped[c] = entries.filter(e => e.category === c); });
 
-  const historyDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const k = d.toISOString().slice(0, 10);
-    const t = (state.entries[k] || []).reduce((s, e) => s + e.cal, 0);
-    const w = state.water[k] || 0;
-    return { key: k, label: i === 0 ? "Today" : formatDate(k), total: t, water: w };
-  });
-
   const w = todayWater();
   const wPct = Math.min((w / WATER_GOAL_ML) * 100, 100);
   const wL = (w / 1000).toFixed(2).replace(/\.?0+$/, '') || '0';
@@ -547,10 +539,9 @@ function render() {
       </div>
 
       <div class="tabs">
-        <button class="tab-btn ${state.activeTab === 'today' ? 'active' : ''}" onclick="switchTab('today')">Today</button>
-        <button class="tab-btn ${state.activeTab === 'history' ? 'active' : ''}" onclick="switchTab('history')">History</button>
-        <button class="tab-btn ${state.activeTab === 'weight' ? 'active' : ''}" onclick="switchTab('weight')">Weight</button>
         <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Meals</button>
+        <button class="tab-btn ${state.activeTab === 'today' ? 'active' : ''}" onclick="switchTab('today')">Today</button>
+        <button class="tab-btn ${state.activeTab === 'weight' ? 'active' : ''}" onclick="switchTab('weight')">Weight</button>
       </div>
     </div>
 
@@ -631,33 +622,6 @@ function render() {
           `;
         }).join('')}
       `}
-    </div>
-    ` : ''}
-
-    <!-- HISTORY TAB -->
-    ${state.activeTab === 'history' ? `
-    <div class="content fade-in">
-      <div class="quick-label" style="margin-bottom:12px">Last 7 days</div>
-      ${historyDays.map(d => {
-        const p = Math.min((d.total / state.goal) * 100, 100);
-        const c = p < 80 ? "#22c55e" : p < 100 ? "#f59e0b" : "#ef4444";
-        const wp = Math.min((d.water / WATER_GOAL_ML) * 100, 100);
-        const wLbl = d.water ? (d.water / 1000).toFixed(1) + 'L' : '—';
-        return `
-          <div class="history-card">
-            <div class="history-row">
-              <span class="history-label">${d.label}</span>
-              <span class="history-total" style="color:${d.total ? c : '#475569'}">${d.total ? d.total.toLocaleString() + ' kcal' : '—'}</span>
-            </div>
-            ${d.total > 0 ? `<div class="progress-bar-bg" style="margin-bottom:8px"><div class="progress-bar" style="width:${p}%;background:${c}"></div></div>` : ''}
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <span style="font-size:11px;color:#64748b">💧 Water</span>
-              <span style="font-size:12px;font-weight:600;color:${d.water >= WATER_GOAL_ML ? '#22c55e' : '#38bdf8'}">${wLbl}</span>
-            </div>
-            ${d.water > 0 ? `<div class="progress-bar-bg"><div class="progress-bar" style="width:${wp}%;background:#38bdf8"></div></div>` : ''}
-          </div>
-        `;
-      }).join('')}
     </div>
     ` : ''}
 
@@ -838,6 +802,7 @@ function submitForm() {
 loadState();
 render();
 renderFast();
+if (state.activeTab === 'meals') loadMeals();
 </script>
 </body>
 </html>
