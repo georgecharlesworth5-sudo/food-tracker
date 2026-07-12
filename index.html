@@ -15,7 +15,7 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     .fade-in { animation: fadeIn 0.25s ease; }
 
-    .header { background: #1e293b; padding: 20px 20px 0; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 100; }
+    .header { background: #1e293b; padding: calc(20px + env(safe-area-inset-top)) 20px 0; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 100; }
     .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
     .date-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; margin-bottom: 2px; }
     .page-title { font-size: 22px; font-weight: 700; color: #f8fafc; }
@@ -156,6 +156,24 @@
     .meal-had-btn:disabled { opacity: 0.5; }
     .seed-card { background: #1e293b; border: 1px dashed #334155; border-radius: 12px; padding: 14px; margin-bottom: 16px; }
     .seed-names { font-size: 12px; color: #64748b; line-height: 1.6; margin-bottom: 10px; }
+
+    .week-card { background: #1e293b; border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; }
+    .week-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .week-clear-btn { background: transparent; border: none; color: #64748b; font-size: 11px; text-decoration: underline; cursor: pointer; }
+    .week-day-row { display: flex; align-items: center; padding: 7px 0; border-bottom: 1px solid #0f172a; }
+    .week-day-row:last-child { border-bottom: none; }
+    .week-day-name { width: 40px; flex: 0 0 auto; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .week-day-meal { flex: 1; font-size: 13px; color: #f1f5f9; }
+    .week-day-meal.empty { color: #475569; font-style: italic; }
+    .week-day-clear { background: transparent; border: none; color: #475569; font-size: 15px; cursor: pointer; padding: 0 4px; }
+
+    .meal-row-wrap { margin-bottom: 6px; }
+    .meal-row-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+    .assign-btn { background: #0f172a; color: #64748b; border: 1px solid #334155; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .assign-btn.active { background: #a78bfa; color: #0f172a; border-color: #a78bfa; }
+    .day-picker { display: flex; gap: 5px; flex-wrap: wrap; padding: 8px 4px 2px; }
+    .day-chip { background: #0f172a; color: #a78bfa; border: 1px solid #334155; padding: 5px 9px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .day-chip:active { background: #334155; }
   </style>
 </head>
 <body>
@@ -167,6 +185,7 @@ const CORE_SEED = [
   "Korean Turkey Rice","Roast Chicken","Chicken Pine Nut Pasta","Veggie Curry",
   "Fajitas","Jacket Potatoes","Cream Corn Pasta","Smoked Sausage Pasta","Shakshuka"
 ];
+const DAYS_OF_WEEK = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const CATEGORIES = ["🍳 Breakfast", "🥗 Lunch", "🍽️ Dinner", "☕ Snack / Drink"];
 const QUICK_ADD = [
   { name: "Black coffee", cal: 2, category: "☕ Snack / Drink" },
@@ -190,12 +209,14 @@ let state = {
   water: {}, weightLog: [], weightInput: 105.0,
   fastStart: null,
   meals: [], mealsSync: "Connecting…", mealsSyncCls: "", newMealName: "",
+  weekPlan: {}, assigningName: null,
 };
 
 function loadState() {
   try { state.entries = JSON.parse(localStorage.getItem("cal_entries") || "{}"); } catch {}
   try { state.water = JSON.parse(localStorage.getItem("cal_water") || "{}"); } catch {}
   try { state.weightLog = JSON.parse(localStorage.getItem("cal_weight") || "[]"); } catch {}
+  try { state.weekPlan = JSON.parse(localStorage.getItem("cal_week_plan") || "{}"); } catch {}
   state.fastStart = localStorage.getItem("cal_fast_start") ? parseInt(localStorage.getItem("cal_fast_start")) : null;
   const g = parseInt(localStorage.getItem("cal_goal"));
   if (!isNaN(g) && g > 0) { state.goal = g; state.goalInput = g; }
@@ -205,6 +226,33 @@ function loadState() {
   if (state.weightLog.length > 0) {
     state.weightInput = state.weightLog[state.weightLog.length - 1].kg;
   }
+}
+
+function saveWeekPlan() { localStorage.setItem("cal_week_plan", JSON.stringify(state.weekPlan)); }
+
+function toggleAssign(name) {
+  state.assigningName = state.assigningName === name ? null : name;
+  render();
+}
+
+function assignMealToDay(name, day) {
+  state.weekPlan[day] = name;
+  state.assigningName = null;
+  saveWeekPlan();
+  render();
+}
+
+function clearDaySlot(day) {
+  delete state.weekPlan[day];
+  saveWeekPlan();
+  render();
+}
+
+function clearWeekPlan() {
+  if (!confirm("Clear all meals assigned to this week?")) return;
+  state.weekPlan = {};
+  saveWeekPlan();
+  render();
 }
 
 function saveEntries() { localStorage.setItem("cal_entries", JSON.stringify(state.entries)); }
@@ -241,6 +289,31 @@ function mealDialLabel(days) {
   if (days === null) return "new";
   if (days === 0) return "today";
   return days + "d";
+}
+
+function mealRowHTML(m, type) {
+  const days = mealDaysSince(m.lastHad);
+  const escName = m.name.replace(/'/g, "\\'");
+  const isAssigning = state.assigningName === m.name;
+  const picker = isAssigning ? `
+    <div class="day-picker">
+      ${DAYS_OF_WEEK.map(d => `<button class="day-chip" onclick="assignMealToDay('${escName}','${d}')">${d}</button>`).join('')}
+    </div>` : '';
+  return `
+    <div class="meal-row-wrap">
+      <div class="meal-row">
+        <div class="meal-dial" style="background:${mealDialColor(days)}">${mealDialLabel(days)}</div>
+        <div class="meal-info">
+          <div class="meal-name">${m.name}</div>
+          <div class="meal-meta">${m.timesHad} time${m.timesHad === 1 ? '' : 's'} logged</div>
+        </div>
+        <div class="meal-row-actions">
+          <button class="assign-btn ${isAssigning ? 'active' : ''}" onclick="toggleAssign('${escName}')">Assign</button>
+          <button class="meal-had-btn" onclick="logMealToSheet('${escName}','${type}', this)">Had it today</button>
+        </div>
+      </div>
+      ${picker}
+    </div>`;
 }
 
 async function loadMeals() {
@@ -280,18 +353,26 @@ async function logMealToSheet(name, type, btnEl) {
 async function seedCoreMeals() {
   const btn = document.getElementById("seedBtn");
   if (btn) { btn.disabled = true; btn.textContent = "Adding…"; }
-  try {
-    for (const name of CORE_SEED) {
-      await fetch(`${WORKER_URL}/log`, {
+  let firstError = null;
+  for (const name of CORE_SEED) {
+    try {
+      const res = await fetch(`${WORKER_URL}/log`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, type: "Core rotation" })
       });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+    } catch (err) {
+      console.error("seed failed on", name, err);
+      if (!firstError) firstError = err.message;
     }
-  } catch (err) {
-    console.error("seed failed", err);
   }
   await loadMeals();
+  if (firstError) {
+    alert("Some meals didn't save. First error: " + firstError);
+    if (btn) { btn.disabled = false; btn.textContent = "Add these to the Sheet"; }
+  }
 }
 
 function addOtherMeal() {
@@ -498,6 +579,7 @@ function render() {
 
   app.innerHTML = `
     <div class="header">
+      ${state.activeTab !== 'meals' ? `
       <div class="header-top">
         <div>
           <div class="date-label">${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
@@ -537,6 +619,9 @@ function render() {
           </div>
         </div>
       </div>
+      ` : `
+      <div style="padding: 10px 0 4px; font-size: 22px; font-weight: 700; color: #f8fafc;">Meals</div>
+      `}
 
       <div class="tabs">
         <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Meals</button>
@@ -712,6 +797,20 @@ function render() {
         <button class="refresh-link" onclick="loadMeals()">Refresh</button>
       </div>
 
+      <div class="week-card">
+        <div class="week-header">
+          <span class="card-label" style="margin-bottom:0">This week</span>
+          <button class="week-clear-btn" onclick="clearWeekPlan()">Clear all</button>
+        </div>
+        ${DAYS_OF_WEEK.map(d => `
+          <div class="week-day-row">
+            <span class="week-day-name">${d}</span>
+            <span class="week-day-meal ${state.weekPlan[d] ? '' : 'empty'}">${state.weekPlan[d] || 'Tap Assign on a meal below'}</span>
+            ${state.weekPlan[d] ? `<button class="week-day-clear" onclick="clearDaySlot('${d}')">✕</button>` : ''}
+          </div>
+        `).join('')}
+      </div>
+
       <div class="card-label">Core rotation</div>
       ${(() => {
         const core = state.meals.filter(m => m.type === 'Core rotation');
@@ -723,18 +822,7 @@ function render() {
             </div>`;
         }
         const sorted = [...core].sort((a, b) => (mealDaysSince(b.lastHad) ?? 9999) - (mealDaysSince(a.lastHad) ?? 9999));
-        return sorted.map(m => {
-          const days = mealDaysSince(m.lastHad);
-          return `
-            <div class="meal-row">
-              <div class="meal-dial" style="background:${mealDialColor(days)}">${mealDialLabel(days)}</div>
-              <div class="meal-info">
-                <div class="meal-name">${m.name}</div>
-                <div class="meal-meta">${m.timesHad} time${m.timesHad === 1 ? '' : 's'} logged</div>
-              </div>
-              <button class="meal-had-btn" onclick="logMealToSheet('${m.name.replace(/'/g,"\\'")}','Core rotation', this)">Had it today</button>
-            </div>`;
-        }).join('');
+        return sorted.map(m => mealRowHTML(m, 'Core rotation')).join('');
       })()}
 
       <div style="margin-top:20px" class="card-label">Other meals</div>
@@ -747,18 +835,7 @@ function render() {
         const others = state.meals.filter(m => m.type !== 'Core rotation');
         if (others.length === 0) return `<div class="empty-state">Nothing logged here yet.</div>`;
         const sorted = [...others].sort((a, b) => (mealDaysSince(b.lastHad) ?? 9999) - (mealDaysSince(a.lastHad) ?? 9999));
-        return sorted.map(m => {
-          const days = mealDaysSince(m.lastHad);
-          return `
-            <div class="meal-row">
-              <div class="meal-dial" style="background:${mealDialColor(days)}">${mealDialLabel(days)}</div>
-              <div class="meal-info">
-                <div class="meal-name">${m.name}</div>
-                <div class="meal-meta">${m.timesHad} time${m.timesHad === 1 ? '' : 's'} logged</div>
-              </div>
-              <button class="meal-had-btn" onclick="logMealToSheet('${m.name.replace(/'/g,"\\'")}','Inspiration', this)">Had it today</button>
-            </div>`;
-        }).join('');
+        return sorted.map(m => mealRowHTML(m, 'Inspiration')).join('');
       })()}
     </div>
     ` : ''}
