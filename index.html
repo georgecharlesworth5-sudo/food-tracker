@@ -140,11 +140,33 @@
 
     /* Chart */
     .weight-chart { width: 100%; height: 120px; margin-bottom: 16px; }
+
+    /* Meals */
+    .sync-line { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .sync-text { font-size: 11px; color: #64748b; }
+    .sync-text.ok { color: #22c55e; }
+    .sync-text.err { color: #ef4444; }
+    .refresh-link { background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 11px; text-decoration: underline; }
+    .meal-row { background: #1e293b; border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    .meal-dial { width: 40px; height: 26px; border-radius: 13px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #0f172a; }
+    .meal-info { flex: 1; min-width: 0; }
+    .meal-name { font-size: 14px; font-weight: 500; color: #f1f5f9; }
+    .meal-meta { font-size: 11px; color: #64748b; margin-top: 1px; }
+    .meal-had-btn { background: #334155; color: #a78bfa; border: none; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; flex: 0 0 auto; }
+    .meal-had-btn:disabled { opacity: 0.5; }
+    .seed-card { background: #1e293b; border: 1px dashed #334155; border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+    .seed-names { font-size: 12px; color: #64748b; line-height: 1.6; margin-bottom: 10px; }
   </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
+const WORKER_URL = "https://meal-planner-worker.georgecharlesworth5.workers.dev";
+const CORE_SEED = [
+  "Bangers and Mash","Bolognese","Lasagna","Sausage Casserole","French Onion Pasta",
+  "Korean Turkey Rice","Roast Chicken","Chicken Pine Nut Pasta","Veggie Curry",
+  "Fajitas","Jacket Potatoes","Cream Corn Pasta","Smoked Sausage Pasta","Shakshuka"
+];
 const CATEGORIES = ["🍳 Breakfast", "🥗 Lunch", "🍽️ Dinner", "☕ Snack / Drink"];
 const QUICK_ADD = [
   { name: "Black coffee", cal: 2, category: "☕ Snack / Drink" },
@@ -167,6 +189,7 @@ let state = {
   editGoal: false, goalInput: DEFAULT_GOAL, searchText: "",
   water: {}, weightLog: [], weightInput: 105.0,
   fastStart: null,
+  meals: [], mealsSync: "Connecting…", mealsSyncCls: "", newMealName: "",
 };
 
 function loadState() {
@@ -199,6 +222,85 @@ function todayEntries() { return state.entries[getTodayKey()] || []; }
 function todayTotal() { return todayEntries().reduce((s, e) => s + e.cal, 0); }
 function todayWater() { return state.water[getTodayKey()] || 0; }
 function latestWeight() { return state.weightLog.length > 0 ? state.weightLog[state.weightLog.length - 1].kg : null; }
+
+function mealDaysSince(dateStr) {
+  if (!dateStr) return null;
+  const diff = (Date.now() - new Date(dateStr + "T00:00:00").getTime()) / 86400000;
+  return Math.max(0, Math.floor(diff));
+}
+function mealDialColor(days) {
+  if (days === null) return "#f59e0b";
+  const t = Math.min(days, 21) / 21;
+  const c1 = [71, 85, 105], c2 = [245, 158, 11]; // slate -> amber
+  const r = Math.round(c1[0] + (c2[0]-c1[0]) * t);
+  const g = Math.round(c1[1] + (c2[1]-c1[1]) * t);
+  const b = Math.round(c1[2] + (c2[2]-c1[2]) * t);
+  return `rgb(${r},${g},${b})`;
+}
+function mealDialLabel(days) {
+  if (days === null) return "new";
+  if (days === 0) return "today";
+  return days + "d";
+}
+
+async function loadMeals() {
+  state.mealsSync = "Syncing…"; state.mealsSyncCls = "";
+  if (state.activeTab === "meals") render();
+  try {
+    const res = await fetch(`${WORKER_URL}/meals`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    state.meals = data.meals || [];
+    state.mealsSync = "Synced with Sheet"; state.mealsSyncCls = "ok";
+  } catch (err) {
+    console.error("loadMeals failed", err);
+    state.mealsSync = "Could not reach the Sheet"; state.mealsSyncCls = "err";
+  }
+  if (state.activeTab === "meals") render();
+}
+
+async function logMealToSheet(name, type, btnEl) {
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = "Saving…"; }
+  try {
+    const res = await fetch(`${WORKER_URL}/log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, type })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    await loadMeals();
+  } catch (err) {
+    console.error("logMeal failed", err);
+    alert("Could not save to the Sheet: " + err.message);
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = "Had it today"; }
+  }
+}
+
+async function seedCoreMeals() {
+  const btn = document.getElementById("seedBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "Adding…"; }
+  try {
+    for (const name of CORE_SEED) {
+      await fetch(`${WORKER_URL}/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, type: "Core rotation" })
+      });
+    }
+  } catch (err) {
+    console.error("seed failed", err);
+  }
+  await loadMeals();
+}
+
+function addOtherMeal() {
+  const input = document.getElementById("newMealInput");
+  const name = (input?.value || "").trim();
+  if (!name) return;
+  input.value = "";
+  logMealToSheet(name, "Inspiration");
+}
 
 function adjustWeight(delta) {
   state.weightInput = Math.round((state.weightInput + delta) * 10) / 10;
@@ -448,6 +550,7 @@ function render() {
         <button class="tab-btn ${state.activeTab === 'today' ? 'active' : ''}" onclick="switchTab('today')">Today</button>
         <button class="tab-btn ${state.activeTab === 'history' ? 'active' : ''}" onclick="switchTab('history')">History</button>
         <button class="tab-btn ${state.activeTab === 'weight' ? 'active' : ''}" onclick="switchTab('weight')">Weight</button>
+        <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Meals</button>
       </div>
     </div>
 
@@ -636,10 +739,69 @@ function render() {
       `}
     </div>
     ` : ''}
+
+    <!-- MEALS TAB -->
+    ${state.activeTab === 'meals' ? `
+    <div class="content fade-in">
+      <div class="sync-line">
+        <span class="sync-text ${state.mealsSyncCls}">${state.mealsSync}</span>
+        <button class="refresh-link" onclick="loadMeals()">Refresh</button>
+      </div>
+
+      <div class="card-label">Core rotation</div>
+      ${(() => {
+        const core = state.meals.filter(m => m.type === 'Core rotation');
+        if (core.length === 0) {
+          return `
+            <div class="seed-card">
+              <div class="seed-names">Not synced yet: ${CORE_SEED.join(', ')}</div>
+              <button class="add-btn enabled" id="seedBtn" onclick="seedCoreMeals()">Add these to the Sheet</button>
+            </div>`;
+        }
+        const sorted = [...core].sort((a, b) => (mealDaysSince(b.lastHad) ?? 9999) - (mealDaysSince(a.lastHad) ?? 9999));
+        return sorted.map(m => {
+          const days = mealDaysSince(m.lastHad);
+          return `
+            <div class="meal-row">
+              <div class="meal-dial" style="background:${mealDialColor(days)}">${mealDialLabel(days)}</div>
+              <div class="meal-info">
+                <div class="meal-name">${m.name}</div>
+                <div class="meal-meta">${m.timesHad} time${m.timesHad === 1 ? '' : 's'} logged</div>
+              </div>
+              <button class="meal-had-btn" onclick="logMealToSheet('${m.name.replace(/'/g,"\\'")}','Core rotation', this)">Had it today</button>
+            </div>`;
+        }).join('');
+      })()}
+
+      <div style="margin-top:20px" class="card-label">Other meals</div>
+      <div class="input-wrap" style="display:flex; gap:8px;">
+        <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" style="margin-bottom:0" />
+        <button class="add-btn enabled" style="width:auto; padding:0 16px;" onclick="addOtherMeal()">Add</button>
+      </div>
+
+      ${(() => {
+        const others = state.meals.filter(m => m.type !== 'Core rotation');
+        if (others.length === 0) return `<div class="empty-state">Nothing logged here yet.</div>`;
+        const sorted = [...others].sort((a, b) => (mealDaysSince(b.lastHad) ?? 9999) - (mealDaysSince(a.lastHad) ?? 9999));
+        return sorted.map(m => {
+          const days = mealDaysSince(m.lastHad);
+          return `
+            <div class="meal-row">
+              <div class="meal-dial" style="background:${mealDialColor(days)}">${mealDialLabel(days)}</div>
+              <div class="meal-info">
+                <div class="meal-name">${m.name}</div>
+                <div class="meal-meta">${m.timesHad} time${m.timesHad === 1 ? '' : 's'} logged</div>
+              </div>
+              <button class="meal-had-btn" onclick="logMealToSheet('${m.name.replace(/'/g,"\\'")}','Inspiration', this)">Had it today</button>
+            </div>`;
+        }).join('');
+      })()}
+    </div>
+    ` : ''}
   `;
 }
 
-function switchTab(tab) { state.activeTab = tab; render(); renderFast(); }
+function switchTab(tab) { state.activeTab = tab; render(); renderFast(); if (tab === 'meals' && state.meals.length === 0) loadMeals(); }
 function openGoalEdit() { state.editGoal = true; render(); document.getElementById("goalInput")?.focus(); }
 function setGoal() {
   const v = parseInt(document.getElementById("goalInput")?.value);
