@@ -46,21 +46,10 @@
     .num-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; outline: none; }
     .num-input:focus { border-color: #3b82f6; }
     select.cat-select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 13px; outline: none; -webkit-appearance: none; }
-    .add-btn { width: 100%; padding: 11px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; }
-    .add-btn.enabled { background: #3b82f6; color: #fff; }
-    .add-btn.disabled { background: #1e3a5f; color: #475569; cursor: default; }
-
-    .autocomplete { position: absolute; top: 110%; left: 0; right: 0; background: #1e293b; border: 1px solid #334155; border-radius: 8px; z-index: 50; overflow: hidden; }
-    .autocomplete-item { padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; border-bottom: 1px solid #0f172a; font-size: 13px; }
-    .autocomplete-item:hover { background: #334155; }
-    .ac-cal { color: #94a3b8; }
-
-    .quick-section { margin-bottom: 16px; }
-    .quick-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .quick-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-    .chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: #94a3b8; cursor: pointer; font-size: 12px; white-space: nowrap; }
-    .chip:active { background: #334155; }
-    .chip-cal { color: #64748b; }
+    .add-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease; }
+    .add-btn.enabled { background: #3b82f6; color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,0.4); }
+    .add-btn.enabled:active { background: #2563eb; transform: scale(0.98); box-shadow: 0 2px 6px rgba(59,130,246,0.3); }
+    .add-btn.disabled { background: #1e293b; color: #64748b; border: 1px solid #334155; box-shadow: none; cursor: default; }
 
     .empty-state { text-align: center; padding: 40px 20px; color: #475569; font-size: 14px; line-height: 1.6; }
     .cat-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
@@ -72,13 +61,6 @@
     .entry-right { display: flex; align-items: center; gap: 10px; }
     .entry-cal { font-size: 15px; font-weight: 700; color: #94a3b8; }
     .remove-btn { background: transparent; border: none; color: #475569; cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
-
-    .history-card { background: #1e293b; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
-    .history-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-    .history-label { font-size: 13px; font-weight: 600; color: #f1f5f9; }
-    .history-total { font-size: 13px; font-weight: 700; }
-    .progress-bar-bg { height: 4px; background: #0f172a; border-radius: 2px; overflow: hidden; }
-    .progress-bar { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
 
     /* Water */
     .water-card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
@@ -107,39 +89,6 @@
     .fast-btn-start { background: #f59e0b; color: #000; }
     .fast-btn-stop { background: #334155; color: #94a3b8; }
     .fast-started { font-size: 11px; color: #64748b; text-align: center; margin-top: 8px; }
-
-    /* Weight */
-    .weight-hero { text-align: center; padding: 24px 0 20px; }
-    .weight-current { font-size: 56px; font-weight: 800; color: #f8fafc; letter-spacing: -2px; line-height: 1; }
-    .weight-current span { font-size: 22px; color: #64748b; font-weight: 400; }
-    .weight-delta { font-size: 14px; font-weight: 600; margin-top: 6px; }
-    .weight-target { font-size: 12px; color: #64748b; margin-top: 4px; }
-    .weight-controls { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 20px; }
-    .weight-btn { width: 52px; height: 52px; border-radius: 50%; border: none; font-size: 24px; font-weight: 300; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .weight-btn-minus { background: #1e293b; color: #94a3b8; }
-    .weight-btn-minus:active { background: #334155; }
-    .weight-btn-plus { background: #1e293b; color: #94a3b8; }
-    .weight-btn-plus:active { background: #334155; }
-    .weight-display { font-size: 36px; font-weight: 700; color: #f8fafc; min-width: 110px; text-align: center; letter-spacing: -1px; }
-    .weight-display span { font-size: 16px; color: #64748b; font-weight: 400; }
-    .weight-log-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #3b82f6; color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; margin-bottom: 20px; }
-    .weight-log-btn:active { background: #2563eb; }
-    .weight-history-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-    .weight-entry { background: #1e293b; border-radius: 10px; padding: 10px 14px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-    .weight-entry-date { font-size: 13px; color: #94a3b8; }
-    .weight-entry-right { display: flex; align-items: center; gap: 10px; }
-    .weight-entry-kg { font-size: 16px; font-weight: 700; color: #f1f5f9; }
-    .weight-entry-delta { font-size: 12px; font-weight: 600; }
-    .weight-progress-section { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
-    .weight-progress-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    .weight-progress-stat { text-align: center; }
-    .weight-progress-val { font-size: 18px; font-weight: 700; }
-    .weight-progress-lbl { font-size: 10px; color: #64748b; margin-top: 2px; }
-    .wt-bar-bg { height: 10px; background: #0f172a; border-radius: 5px; overflow: hidden; }
-    .wt-bar { height: 100%; border-radius: 5px; background: #a78bfa; transition: width 0.5s ease; }
-
-    /* Chart */
-    .weight-chart { width: 100%; height: 120px; margin-bottom: 16px; }
 
     /* Meals */
     .sync-line { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -186,27 +135,15 @@ const CORE_SEED = [
   "Fajitas","Jacket Potatoes","Cream Corn Pasta","Smoked Sausage Pasta","Shakshuka"
 ];
 const DAYS_OF_WEEK = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const CATEGORIES = ["🍳 Breakfast", "🥗 Lunch", "🍽️ Dinner", "☕ Snack / Drink"];
-const QUICK_ADD = [
-  { name: "Black coffee", cal: 2, category: "☕ Snack / Drink" },
-  { name: "Flat white", cal: 120, category: "☕ Snack / Drink" },
-  { name: "Pint of lager", cal: 182, category: "☕ Snack / Drink" },
-  { name: "Glass of red wine", cal: 125, category: "☕ Snack / Drink" },
-  { name: "Banana", cal: 89, category: "☕ Snack / Drink" },
-  { name: "Chicken breast (150g)", cal: 165, category: "🍽️ Dinner" },
-  { name: "White rice (100g cooked)", cal: 130, category: "🍽️ Dinner" },
-  { name: "Porridge (oats + milk)", cal: 290, category: "🍳 Breakfast" },
-];
+const CATEGORIES = ["🍳 Breakfast", "🥗 Lunch", "🍽️ Tea", "☕ Snack / Drink"];
 const DEFAULT_GOAL = 2100;
 const WATER_GOAL_ML = 2500;
-const START_WEIGHT = 105;
-const TARGET_WEIGHT = 100;
 
 let state = {
   entries: {}, goal: DEFAULT_GOAL, activeTab: "meals",
   formName: "", formCal: "", formCat: CATEGORIES[0],
   editGoal: false, goalInput: DEFAULT_GOAL, searchText: "",
-  water: {}, weightLog: [], weightInput: 105.0,
+  water: {},
   fastStart: null,
   meals: [], mealsSync: "Connecting…", mealsSyncCls: "", newMealName: "",
   weekPlan: {}, assigningName: null,
@@ -215,16 +152,11 @@ let state = {
 function loadState() {
   try { state.entries = JSON.parse(localStorage.getItem("cal_entries") || "{}"); } catch {}
   try { state.water = JSON.parse(localStorage.getItem("cal_water") || "{}"); } catch {}
-  try { state.weightLog = JSON.parse(localStorage.getItem("cal_weight") || "[]"); } catch {}
   state.fastStart = localStorage.getItem("cal_fast_start") ? parseInt(localStorage.getItem("cal_fast_start")) : null;
   const g = parseInt(localStorage.getItem("cal_goal"));
   if (!isNaN(g) && g > 0) { state.goal = g; state.goalInput = g; }
   // Restart fast tick if active
   if (state.fastStart) startFastTick();
-  // Set weight input to last logged weight or start weight
-  if (state.weightLog.length > 0) {
-    state.weightInput = state.weightLog[state.weightLog.length - 1].kg;
-  }
 }
 
 async function loadWeekPlan() {
@@ -301,7 +233,6 @@ async function clearWeekPlan() {
 
 function saveEntries() { localStorage.setItem("cal_entries", JSON.stringify(state.entries)); }
 function saveWater() { localStorage.setItem("cal_water", JSON.stringify(state.water)); }
-function saveWeight() { localStorage.setItem("cal_weight", JSON.stringify(state.weightLog)); }
 
 function getTodayKey() { return new Date().toISOString().slice(0, 10); }
 function formatTime(ts) { return new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); }
@@ -313,7 +244,6 @@ function formatDate(key) {
 function todayEntries() { return state.entries[getTodayKey()] || []; }
 function todayTotal() { return todayEntries().reduce((s, e) => s + e.cal, 0); }
 function todayWater() { return state.water[getTodayKey()] || 0; }
-function latestWeight() { return state.weightLog.length > 0 ? state.weightLog[state.weightLog.length - 1].kg : null; }
 
 function mealDaysSince(dateStr) {
   if (!dateStr) return null;
@@ -425,28 +355,6 @@ function addOtherMeal() {
   if (!name) return;
   input.value = "";
   logMealToSheet(name, "Inspiration");
-}
-
-function adjustWeight(delta) {
-  state.weightInput = Math.round((state.weightInput + delta) * 10) / 10;
-  document.getElementById("weightDisplay").innerHTML = `${state.weightInput.toFixed(1)}<span> kg</span>`;
-}
-
-function logWeight() {
-  const kg = state.weightInput;
-  const key = getTodayKey();
-  // Replace today's entry if already exists
-  state.weightLog = state.weightLog.filter(e => e.date !== key);
-  state.weightLog.push({ date: key, kg });
-  state.weightLog.sort((a, b) => a.date.localeCompare(b.date));
-  saveWeight();
-  render();
-}
-
-function deleteWeight(date) {
-  state.weightLog = state.weightLog.filter(e => e.date !== date);
-  saveWeight();
-  render();
 }
 
 function startFast() {
@@ -561,40 +469,6 @@ function removeEntry(id) {
   render();
 }
 
-function buildWeightChart(log) {
-  if (log.length < 2) return '';
-  const weights = log.map(e => e.kg);
-  const minW = Math.min(...weights) - 0.5;
-  const maxW = Math.max(...weights) + 0.5;
-  const W = 400, H = 100, pad = 10;
-  const xScale = i => pad + (i / (log.length - 1)) * (W - pad * 2);
-  const yScale = v => H - pad - ((v - minW) / (maxW - minW)) * (H - pad * 2);
-  const pts = log.map((e, i) => `${xScale(i)},${yScale(e.kg)}`).join(' ');
-  const areaBottom = H - pad;
-  const areaPts = `${xScale(0)},${areaBottom} ${pts} ${xScale(log.length-1)},${areaBottom}`;
-
-  // Target line
-  const targetY = yScale(TARGET_WEIGHT);
-  const targetLine = TARGET_WEIGHT >= minW && TARGET_WEIGHT <= maxW
-    ? `<line x1="${pad}" y1="${targetY}" x2="${W - pad}" y2="${targetY}" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>`
-    : '';
-
-  return `
-    <svg class="weight-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      ${targetLine}
-      <polygon points="${areaPts}" fill="url(#wGrad)"/>
-      <polyline points="${pts}" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      ${log.map((e, i) => `<circle cx="${xScale(i)}" cy="${yScale(e.kg)}" r="3" fill="#a78bfa"/>`).join('')}
-    </svg>
-  `;
-}
-
 function render() {
   const app = document.getElementById("app");
   const entries = todayEntries();
@@ -613,13 +487,6 @@ function render() {
   const wPct = Math.min((w / WATER_GOAL_ML) * 100, 100);
   const wL = (w / 1000).toFixed(2).replace(/\.?0+$/, '') || '0';
   const goalL = (WATER_GOAL_ML / 1000).toFixed(1);
-
-  // Weight tab data
-  const wLog = state.weightLog;
-  const currentKg = latestWeight();
-  const totalLost = currentKg !== null ? Math.round((START_WEIGHT - currentKg) * 10) / 10 : 0;
-  const toGo = currentKg !== null ? Math.round((currentKg - TARGET_WEIGHT) * 10) / 10 : START_WEIGHT - TARGET_WEIGHT;
-  const progressPct = Math.min(Math.max((START_WEIGHT - (currentKg || START_WEIGHT)) / (START_WEIGHT - TARGET_WEIGHT) * 100, 0), 100);
 
   app.innerHTML = `
     <div class="header">
@@ -668,9 +535,8 @@ function render() {
       `}
 
       <div class="tabs">
-        <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Meals</button>
-        <button class="tab-btn ${state.activeTab === 'today' ? 'active' : ''}" onclick="switchTab('today')">Today</button>
-        <button class="tab-btn ${state.activeTab === 'weight' ? 'active' : ''}" onclick="switchTab('weight')">Weight</button>
+        <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Meal Planner</button>
+        <button class="tab-btn ${state.activeTab === 'today' ? 'active' : ''}" onclick="switchTab('today')">Calorie Counter</button>
       </div>
     </div>
 
@@ -699,8 +565,7 @@ function render() {
       <div class="card">
         <div class="card-label">Add food / drink</div>
         <div class="input-wrap">
-          <input class="text-input" type="text" id="foodName" placeholder="Search quick-add or type food name…" value="${state.formName}" oninput="onSearch(this.value)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-          <div id="autocompleteWrap"></div>
+          <input class="text-input" type="text" id="foodName" placeholder="Type food name…" value="${state.formName}" oninput="state.formName=this.value" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
         </div>
         <div class="form-row">
           <input class="num-input" type="number" id="foodCal" placeholder="Calories (kcal)" value="${state.formCal}" oninput="state.formCal=this.value" />
@@ -711,19 +576,8 @@ function render() {
         <button class="add-btn ${state.formName && state.formCal ? 'enabled' : 'disabled'}" onclick="submitForm()">Add to log</button>
       </div>
 
-      <div class="quick-section">
-        <div class="quick-label">Quick add</div>
-        <div class="quick-chips">
-          ${QUICK_ADD.map(q => `
-            <button class="chip" onclick="addEntry('${q.name.replace(/'/g,"\\'")}',${q.cal},'${q.category.replace(/'/g,"\\'")}')">
-              ${q.name} <span class="chip-cal">·${q.cal}</span>
-            </button>
-          `).join('')}
-        </div>
-      </div>
-
       ${entries.length === 0 ? `
-        <div class="empty-state">Nothing logged yet today.<br>Add an item above or use a quick-add chip.</div>
+        <div class="empty-state">Nothing logged yet today.<br>Add an item above.</div>
       ` : `
         ${CATEGORIES.map(cat => {
           const items = grouped[cat];
@@ -750,85 +604,6 @@ function render() {
             </div>
           `;
         }).join('')}
-      `}
-    </div>
-    ` : ''}
-
-    <!-- WEIGHT TAB -->
-    ${state.activeTab === 'weight' ? `
-    <div class="content fade-in">
-
-      <!-- Progress summary -->
-      <div class="weight-progress-section">
-        <div class="weight-progress-row">
-          <div class="weight-progress-stat">
-            <div class="weight-progress-val" style="color:#f8fafc">${START_WEIGHT}</div>
-            <div class="weight-progress-lbl">Start (kg)</div>
-          </div>
-          <div class="weight-progress-stat">
-            <div class="weight-progress-val" style="color:${totalLost > 0 ? '#22c55e' : '#64748b'}">-${totalLost.toFixed(1)}</div>
-            <div class="weight-progress-lbl">Lost (kg)</div>
-          </div>
-          <div class="weight-progress-stat">
-            <div class="weight-progress-val" style="color:#f59e0b">${toGo > 0 ? toGo.toFixed(1) : '0'}</div>
-            <div class="weight-progress-lbl">To go (kg)</div>
-          </div>
-          <div class="weight-progress-stat">
-            <div class="weight-progress-val" style="color:#a78bfa">${TARGET_WEIGHT}</div>
-            <div class="weight-progress-lbl">Target (kg)</div>
-          </div>
-        </div>
-        <div class="wt-bar-bg">
-          <div class="wt-bar" style="width:${progressPct}%"></div>
-        </div>
-        ${progressPct >= 100 ? `<div style="text-align:center;color:#22c55e;font-size:12px;margin-top:8px;font-weight:600">🎉 Target reached!</div>` : ''}
-      </div>
-
-      <!-- Log weight -->
-      <div class="card">
-        <div class="card-label">Log today's weight</div>
-        <div class="weight-controls">
-          <button class="weight-btn weight-btn-minus" onclick="adjustWeight(-0.1)">−</button>
-          <div class="weight-display" id="weightDisplay">${state.weightInput.toFixed(1)}<span> kg</span></div>
-          <button class="weight-btn weight-btn-plus" onclick="adjustWeight(0.1)">+</button>
-        </div>
-        <button class="weight-log-btn" onclick="logWeight()">Save weight</button>
-      </div>
-
-      <!-- Chart -->
-      ${wLog.length >= 2 ? `
-        <div class="card" style="padding-bottom:8px">
-          <div class="card-label">Trend</div>
-          ${buildWeightChart(wLog)}
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#475569;margin-top:-4px">
-            <span>${formatDate(wLog[0].date)}</span>
-            <span style="color:#a78bfa;font-size:10px">— — target: ${TARGET_WEIGHT}kg</span>
-            <span>${formatDate(wLog[wLog.length-1].date)}</span>
-          </div>
-        </div>
-      ` : ''}
-
-      <!-- Log history -->
-      ${wLog.length > 0 ? `
-        <div class="weight-history-label">Log</div>
-        ${[...wLog].reverse().map((e, i, arr) => {
-          const prev = arr[i + 1];
-          const delta = prev ? Math.round((e.kg - prev.kg) * 10) / 10 : null;
-          const deltaColor = delta === null ? '' : delta < 0 ? '#22c55e' : delta > 0 ? '#ef4444' : '#64748b';
-          const deltaStr = delta === null ? '' : (delta > 0 ? '+' : '') + delta.toFixed(1) + ' kg';
-          return `
-            <div class="weight-entry">
-              <span class="weight-entry-date">${formatDate(e.date)}</span>
-              <div class="weight-entry-right">
-                ${delta !== null ? `<span class="weight-entry-delta" style="color:${deltaColor}">${deltaStr}</span>` : ''}
-                <span class="weight-entry-kg">${e.kg.toFixed(1)} kg</span>
-                <button class="remove-btn" onclick="deleteWeight('${e.date}')">✕</button>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      ` : `
-        <div class="empty-state">No weight logged yet.<br>Use the controls above to log your first entry.</div>
       `}
     </div>
     ` : ''}
@@ -897,25 +672,6 @@ function setGoal() {
   const v = parseInt(document.getElementById("goalInput")?.value);
   if (!isNaN(v) && v > 0) { state.goal = v; state.goalInput = v; localStorage.setItem("cal_goal", v); }
   state.editGoal = false; render();
-}
-function onSearch(val) {
-  state.searchText = val; state.formName = val;
-  const filtered = val.length > 1 ? QUICK_ADD.filter(q => q.name.toLowerCase().includes(val.toLowerCase())) : [];
-  const wrap = document.getElementById("autocompleteWrap");
-  if (wrap) {
-    wrap.innerHTML = filtered.length ? `<div class="autocomplete">${filtered.map(q => `<div class="autocomplete-item" onclick="selectQuick('${q.name.replace(/'/g,"\\'")}',${q.cal},'${q.category.replace(/'/g,"\\'")}')"><span>${q.name}</span><span class="ac-cal">${q.cal} kcal</span></div>`).join('')}</div>` : '';
-  }
-}
-function selectQuick(name, cal, cat) {
-  state.formName = name; state.formCal = cal; state.formCat = cat; state.searchText = "";
-  const nameEl = document.getElementById("foodName");
-  const calEl = document.getElementById("foodCal");
-  const catEl = document.getElementById("foodCat");
-  if (nameEl) nameEl.value = name;
-  if (calEl) calEl.value = cal;
-  if (catEl) catEl.value = cat;
-  const wrap = document.getElementById("autocompleteWrap");
-  if (wrap) wrap.innerHTML = "";
 }
 function submitForm() {
   const name = document.getElementById("foodName")?.value || state.formName;
