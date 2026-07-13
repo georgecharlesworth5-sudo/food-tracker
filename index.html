@@ -216,7 +216,6 @@ function loadState() {
   try { state.entries = JSON.parse(localStorage.getItem("cal_entries") || "{}"); } catch {}
   try { state.water = JSON.parse(localStorage.getItem("cal_water") || "{}"); } catch {}
   try { state.weightLog = JSON.parse(localStorage.getItem("cal_weight") || "[]"); } catch {}
-  try { state.weekPlan = JSON.parse(localStorage.getItem("cal_week_plan") || "{}"); } catch {}
   state.fastStart = localStorage.getItem("cal_fast_start") ? parseInt(localStorage.getItem("cal_fast_start")) : null;
   const g = parseInt(localStorage.getItem("cal_goal"));
   if (!isNaN(g) && g > 0) { state.goal = g; state.goalInput = g; }
@@ -228,31 +227,76 @@ function loadState() {
   }
 }
 
-function saveWeekPlan() { localStorage.setItem("cal_week_plan", JSON.stringify(state.weekPlan)); }
+async function loadWeekPlan() {
+  try {
+    const res = await fetch(`${WORKER_URL}/weekplan`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    state.weekPlan = data.weekPlan || {};
+    state.mealsSync = "Synced with Sheet"; state.mealsSyncCls = "ok";
+  } catch (err) {
+    console.error("loadWeekPlan failed", err);
+    state.mealsSync = "Could not reach the Sheet"; state.mealsSyncCls = "err";
+  }
+  if (state.activeTab === "meals") render();
+}
 
 function toggleAssign(name) {
   state.assigningName = state.assigningName === name ? null : name;
   render();
 }
 
-function assignMealToDay(name, day) {
-  state.weekPlan[day] = name;
+async function assignMealToDay(name, day) {
+  state.weekPlan[day] = name; // optimistic update
   state.assigningName = null;
-  saveWeekPlan();
   render();
+  try {
+    const res = await fetch(`${WORKER_URL}/weekplan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ day, meal: name })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+  } catch (err) {
+    console.error("assignMealToDay failed", err);
+    alert("Could not save to the Sheet: " + err.message);
+  }
+  await loadWeekPlan();
 }
 
-function clearDaySlot(day) {
-  delete state.weekPlan[day];
-  saveWeekPlan();
+async function clearDaySlot(day) {
+  delete state.weekPlan[day]; // optimistic update
   render();
+  try {
+    const res = await fetch(`${WORKER_URL}/weekplan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ day, meal: "" })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+  } catch (err) {
+    console.error("clearDaySlot failed", err);
+    alert("Could not save to the Sheet: " + err.message);
+  }
+  await loadWeekPlan();
 }
 
-function clearWeekPlan() {
+async function clearWeekPlan() {
   if (!confirm("Clear all meals assigned to this week?")) return;
-  state.weekPlan = {};
-  saveWeekPlan();
-  render();
+  for (const day of DAYS_OF_WEEK) {
+    try {
+      await fetch(`${WORKER_URL}/weekplan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ day, meal: "" })
+      });
+    } catch (err) {
+      console.error("clearWeekPlan failed on", day, err);
+    }
+  }
+  await loadWeekPlan();
 }
 
 function saveEntries() { localStorage.setItem("cal_entries", JSON.stringify(state.entries)); }
@@ -794,7 +838,7 @@ function render() {
     <div class="content fade-in">
       <div class="sync-line">
         <span class="sync-text ${state.mealsSyncCls}">${state.mealsSync}</span>
-        <button class="refresh-link" onclick="loadMeals()">Refresh</button>
+        <button class="refresh-link" onclick="loadMeals(); loadWeekPlan();">Refresh</button>
       </div>
 
       <div class="week-card">
@@ -842,7 +886,12 @@ function render() {
   `;
 }
 
-function switchTab(tab) { state.activeTab = tab; render(); renderFast(); if (tab === 'meals' && state.meals.length === 0) loadMeals(); }
+function switchTab(tab) {
+  state.activeTab = tab;
+  render();
+  renderFast();
+  if (tab === 'meals') { loadMeals(); loadWeekPlan(); }
+}
 function openGoalEdit() { state.editGoal = true; render(); document.getElementById("goalInput")?.focus(); }
 function setGoal() {
   const v = parseInt(document.getElementById("goalInput")?.value);
@@ -879,7 +928,7 @@ function submitForm() {
 loadState();
 render();
 renderFast();
-if (state.activeTab === 'meals') loadMeals();
+if (state.activeTab === 'meals') { loadMeals(); loadWeekPlan(); }
 </script>
 </body>
 </html>
