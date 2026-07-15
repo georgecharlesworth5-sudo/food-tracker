@@ -46,6 +46,9 @@
     .num-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; outline: none; }
     .num-input:focus { border-color: #3b82f6; }
     select.cat-select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 13px; outline: none; -webkit-appearance: none; }
+    .spike-check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; padding: 0 4px; white-space: nowrap; }
+    .spike-check input { width: auto; }
+    .entry-spike { color: #ef4444; font-size: 13px; }
     .add-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease; }
     .add-btn.enabled { background: #3b82f6; color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,0.4); }
     .add-btn.enabled:active { background: #2563eb; transform: scale(0.98); box-shadow: 0 2px 6px rgba(59,130,246,0.3); }
@@ -141,7 +144,7 @@ const WATER_GOAL_ML = 2500;
 
 let state = {
   entries: {}, goal: DEFAULT_GOAL, activeTab: "meals",
-  formName: "", formCal: "", formCat: CATEGORIES[0],
+  formName: "", formCal: "", formCat: CATEGORIES[0], formTime: "", formSpike: false,
   editGoal: false, goalInput: DEFAULT_GOAL, searchText: "",
   water: {},
   fastStart: null,
@@ -513,14 +516,20 @@ function renderWater() {
   }
 }
 
-function addEntry(name, cal, category) {
+function addEntry(name, cal, category, timeEaten, heartSpike) {
   if (!name || !cal || isNaN(cal)) return;
   const key = getTodayKey();
-  const entry = { id: Date.now() + Math.random(), name, cal: Math.round(cal), category, ts: Date.now() };
+  const entry = {
+    id: Date.now() + Math.random(),
+    name, cal: Math.round(cal), category,
+    ts: Date.now(),
+    timeEaten: timeEaten || formatTime(Date.now()),
+    heartSpike: !!heartSpike,
+  };
   if (!state.entries[key]) state.entries[key] = [];
   state.entries[key].push(entry);
   saveEntries();
-  state.formName = ""; state.formCal = ""; state.searchText = "";
+  state.formName = ""; state.formCal = ""; state.searchText = ""; state.formTime = ""; state.formSpike = false;
   render();
 }
 
@@ -635,6 +644,13 @@ function render() {
             ${CATEGORIES.map(c => `<option value="${c}" ${state.formCat === c ? 'selected' : ''}>${c}</option>`).join('')}
           </select>
         </div>
+        <div class="form-row">
+          <input class="num-input" type="time" id="foodTime" value="${state.formTime || ''}" oninput="state.formTime=this.value" />
+          <label class="spike-check">
+            <input type="checkbox" id="foodSpike" ${state.formSpike ? 'checked' : ''} onchange="state.formSpike=this.checked" />
+            Heart rate spike
+          </label>
+        </div>
         <button class="add-btn ${state.formName && state.formCal ? 'enabled' : 'disabled'}" onclick="submitForm()">Add to log</button>
       </div>
 
@@ -654,8 +670,8 @@ function render() {
               ${items.map(e => `
                 <div class="entry-card">
                   <div>
-                    <div class="entry-name">${e.name}</div>
-                    <div class="entry-time">${formatTime(e.ts)}</div>
+                    <div class="entry-name">${e.name}${e.heartSpike ? ' <span class="entry-spike" title="Heart rate spike">❤️</span>' : ''}</div>
+                    <div class="entry-time">${e.timeEaten || formatTime(e.ts)}</div>
                   </div>
                   <div class="entry-right">
                     <span class="entry-cal">${e.cal}</span>
@@ -739,8 +755,19 @@ function submitForm() {
   const name = document.getElementById("foodName")?.value || state.formName;
   const cal = document.getElementById("foodCal")?.value || state.formCal;
   const cat = document.getElementById("foodCat")?.value || state.formCat;
-  state.formName = name; state.formCal = cal; state.formCat = cat;
-  addEntry(name, parseFloat(cal), cat);
+  const time = document.getElementById("foodTime")?.value || state.formTime;
+  const spike = document.getElementById("foodSpike")?.checked || false;
+  state.formName = name; state.formCal = cal; state.formCat = cat; state.formTime = time; state.formSpike = spike;
+  const timeLabel = time ? formatTimeFromInput(time) : null;
+  addEntry(name, parseFloat(cal), cat, timeLabel, spike);
+}
+
+function formatTimeFromInput(hhmm) {
+  // hhmm is "HH:MM" (24hr) from a <input type=time>; format to match formatTime's style
+  const [h, m] = hhmm.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return formatTime(d.getTime());
 }
 
 loadState();
