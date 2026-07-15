@@ -146,7 +146,7 @@ let state = {
   water: {},
   fastStart: null,
   meals: [], mealsSync: "Connecting…", mealsSyncCls: "", newMealName: "",
-  weekPlan: {}, weekPlanAutoLog: {}, assigningName: null,
+  weekPlan: {}, weekPlanAutoLog: {}, assigningName: null, autoLogRunning: false,
 };
 
 function loadState() {
@@ -191,32 +191,39 @@ async function markAutoLogged(day, dateStr) {
 // Checks each day Mon..today in the current week: if a meal is assigned
 // and that day has arrived (or passed) and it hasn't been auto-logged yet
 // for that specific date, logs it as had and marks it done.
+// Guarded so overlapping calls (e.g. tapping Refresh twice, or switching
+// tabs back and forth quickly) can't double-log the same meal.
 async function checkAutoLogMeals() {
-  const today = new Date();
-  const dow = today.getDay(); // 0=Sun..6=Sat
-  const mondayOffset = dow === 0 ? 6 : dow - 1;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - mondayOffset);
-  monday.setHours(0, 0, 0, 0);
-  const todayStr = getTodayKey();
+  if (state.autoLogRunning) return;
+  state.autoLogRunning = true;
+  try {
+    const todayStr = getTodayKey(); // YYYY-MM-DD, same UTC basis as the rest of the app
+    const todayUTC = new Date(todayStr + "T00:00:00Z");
+    const dow = todayUTC.getUTCDay(); // 0=Sun..6=Sat
+    const mondayOffset = dow === 0 ? 6 : dow - 1;
+    const mondayUTC = new Date(todayUTC);
+    mondayUTC.setUTCDate(todayUTC.getUTCDate() - mondayOffset);
 
-  for (let i = 0; i < DAYS_OF_WEEK.length; i++) {
-    const dayLabel = DAYS_OF_WEEK[i];
-    const meal = state.weekPlan[dayLabel];
-    if (!meal) continue;
+    for (let i = 0; i < DAYS_OF_WEEK.length; i++) {
+      const dayLabel = DAYS_OF_WEEK[i];
+      const meal = state.weekPlan[dayLabel];
+      if (!meal) continue;
 
-    const dayDate = new Date(monday);
-    dayDate.setDate(monday.getDate() + i);
-    const dayDateStr = dayDate.toISOString().slice(0, 10);
+      const dayDate = new Date(mondayUTC);
+      dayDate.setUTCDate(mondayUTC.getUTCDate() + i);
+      const dayDateStr = dayDate.toISOString().slice(0, 10);
 
-    if (todayStr < dayDateStr) continue; // day hasn't arrived yet this week
-    if (state.weekPlanAutoLog[dayLabel] === dayDateStr) continue; // already auto-logged for this date
+      if (todayStr < dayDateStr) continue; // day hasn't arrived yet this week
+      if (state.weekPlanAutoLog[dayLabel] === dayDateStr) continue; // already auto-logged for this date
 
-    const existing = state.meals.find(m => m.name.toLowerCase() === meal.toLowerCase());
-    const type = existing ? existing.type : "Inspiration";
-    await logMealToSheet(meal, type, null);
-    await markAutoLogged(dayLabel, dayDateStr);
-    state.weekPlanAutoLog[dayLabel] = dayDateStr; // avoid re-checking same day again this session
+      const existing = state.meals.find(m => m.name.toLowerCase() === meal.toLowerCase());
+      const type = existing ? existing.type : "Inspiration";
+      await logMealToSheet(meal, type, null);
+      await markAutoLogged(dayLabel, dayDateStr);
+      state.weekPlanAutoLog[dayLabel] = dayDateStr; // avoid re-checking same day again this session
+    }
+  } finally {
+    state.autoLogRunning = false;
   }
 }
 
