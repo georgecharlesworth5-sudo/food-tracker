@@ -107,6 +107,10 @@
     .meal-had-btn { background: #334155; color: #a78bfa; border: none; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; flex: 0 0 auto; }
     .meal-had-btn:disabled { opacity: 0.5; }
     .seed-card { background: #1e293b; border: 1px dashed #334155; border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+    .cat-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .cat-chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: #94a3b8; cursor: pointer; font-size: 12px; white-space: nowrap; }
+    .cat-chip.active { background: #a78bfa; border-color: #a78bfa; color: #0f172a; font-weight: 600; }
+    .cat-chip:active { background: #334155; }
     .seed-names { font-size: 12px; color: #64748b; line-height: 1.6; margin-bottom: 10px; }
 
     .week-card { background: #1e293b; border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; }
@@ -133,11 +137,23 @@
 <script>
 const WORKER_URL = "https://meal-planner-worker.georgecharlesworth5.workers.dev";
 const CORE_SEED = [
-  "Bangers and Mash","Bolognese","Lasagna","Sausage Casserole","French Onion Pasta",
-  "Korean Turkey Rice","Roast Chicken","Chicken Pine Nut Pasta","Veggie Curry",
-  "Fajitas","Jacket Potatoes","Cream Corn Pasta","Smoked Sausage Pasta","Shakshuka"
+  { name: "Bangers and Mash", category: "Potato" },
+  { name: "Bolognese", category: "Pasta" },
+  { name: "Lasagna", category: "Pasta" },
+  { name: "Sausage Casserole", category: "Others" },
+  { name: "French Onion Pasta", category: "Veggie" },
+  { name: "Korean Turkey Rice", category: "Rice" },
+  { name: "Roast Chicken", category: "Others" },
+  { name: "Chicken Pine Nut Pasta", category: "Pasta" },
+  { name: "Veggie Curry", category: "Veggie" },
+  { name: "Fajitas", category: "Others" },
+  { name: "Jacket Potatoes", category: "Potato" },
+  { name: "Cream Corn Pasta", category: "Veggie" },
+  { name: "Smoked Sausage Pasta", category: "Pasta" },
+  { name: "Shakshuka", category: "Veggie" },
 ];
 const DAYS_OF_WEEK = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const MEAL_CATEGORIES = ["Pasta", "Rice", "Potato", "Noodles", "Veggie", "Others"];
 const CATEGORIES = ["🍳 Breakfast", "🥗 Lunch", "🍽️ Tea", "☕ Snack / Drink"];
 const DEFAULT_GOAL = 2100;
 const WATER_GOAL_ML = 2500;
@@ -149,7 +165,7 @@ let state = {
   water: {},
   fastStart: null,
   meals: [], mealsSync: "Connecting…", mealsSyncCls: "", newMealName: "",
-  weekPlan: {}, assigningName: null,
+  weekPlan: {}, assigningName: null, categoryFilter: "All", newMealCategory: MEAL_CATEGORIES[0],
 };
 
 function loadState() {
@@ -287,7 +303,7 @@ function mealRowHTML(m, type) {
         <div class="meal-dial" style="background:${mealDialColor(days)}">${mealDialLabel(days)}</div>
         <div class="meal-info">
           <div class="meal-name">${m.name}</div>
-          <div class="meal-meta">${m.timesHad} time${m.timesHad === 1 ? '' : 's'} logged</div>
+          <div class="meal-meta">${m.category || 'Others'} · ${m.timesHad} time${m.timesHad === 1 ? '' : 's'} logged</div>
         </div>
         <div class="meal-row-actions">
           <button class="assign-btn ${isAssigning ? 'active' : ''}" onclick="toggleAssign('${escName}')">Assign</button>
@@ -314,13 +330,13 @@ async function loadMeals() {
   if (state.activeTab === "meals") render();
 }
 
-async function logMealToSheet(name, type, btnEl) {
+async function logMealToSheet(name, type, btnEl, category) {
   if (btnEl) { btnEl.disabled = true; btnEl.textContent = "Saving…"; }
   try {
     const res = await fetch(`${WORKER_URL}/log`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, type })
+      body: JSON.stringify({ name, type, category })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -336,17 +352,17 @@ async function seedCoreMeals() {
   const btn = document.getElementById("seedBtn");
   if (btn) { btn.disabled = true; btn.textContent = "Adding…"; }
   let firstError = null;
-  for (const name of CORE_SEED) {
+  for (const seed of CORE_SEED) {
     try {
       const res = await fetch(`${WORKER_URL}/log`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, type: "Core rotation" })
+        body: JSON.stringify({ name: seed.name, type: "Core rotation", category: seed.category })
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
     } catch (err) {
-      console.error("seed failed on", name, err);
+      console.error("seed failed on", seed.name, err);
       if (!firstError) firstError = err.message;
     }
   }
@@ -359,10 +375,17 @@ async function seedCoreMeals() {
 
 function addOtherMeal() {
   const input = document.getElementById("newMealInput");
+  const catSelect = document.getElementById("newMealCategory");
   const name = (input?.value || "").trim();
+  const category = catSelect?.value || "Others";
   if (!name) return;
   input.value = "";
-  logMealToSheet(name, "Inspiration");
+  logMealToSheet(name, "Inspiration", null, category);
+}
+
+function setCategoryFilter(cat) {
+  state.categoryFilter = cat;
+  render();
 }
 
 function startFast() {
@@ -651,16 +674,24 @@ function render() {
         `).join('')}
       </div>
 
-      <div class="card-label">Core rotation</div>
+      <div class="card-label" style="margin-top:4px">Filter by category</div>
+      <div class="cat-chips">
+        <button class="cat-chip ${state.categoryFilter === 'All' ? 'active' : ''}" onclick="setCategoryFilter('All')">All</button>
+        ${MEAL_CATEGORIES.map(c => `<button class="cat-chip ${state.categoryFilter === c ? 'active' : ''}" onclick="setCategoryFilter('${c}')">${c}</button>`).join('')}
+      </div>
+
+      <div class="card-label" style="margin-top:16px">Core rotation</div>
       ${(() => {
-        const core = state.meals.filter(m => m.type === 'Core rotation');
+        let core = state.meals.filter(m => m.type === 'Core rotation');
         if (core.length === 0) {
           return `
             <div class="seed-card">
-              <div class="seed-names">Not synced yet: ${CORE_SEED.join(', ')}</div>
+              <div class="seed-names">Not synced yet: ${CORE_SEED.map(s => s.name).join(', ')}</div>
               <button class="add-btn enabled" id="seedBtn" onclick="seedCoreMeals()">Add these to the Sheet</button>
             </div>`;
         }
+        if (state.categoryFilter !== 'All') core = core.filter(m => (m.category || 'Others') === state.categoryFilter);
+        if (core.length === 0) return `<div class="empty-state">No core rotation meals in this category.</div>`;
         const sorted = [...core].sort((a, b) => (mealDaysSince(b.lastHad) ?? 9999) - (mealDaysSince(a.lastHad) ?? 9999));
         return sorted.map(m => mealRowHTML(m, 'Core rotation')).join('');
       })()}
@@ -668,11 +699,15 @@ function render() {
       <div style="margin-top:20px" class="card-label">Other meals</div>
       <div class="input-wrap" style="display:flex; gap:8px;">
         <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" style="margin-bottom:0" />
+        <select class="cat-select" id="newMealCategory" style="width:auto;" onchange="state.newMealCategory=this.value">
+          ${MEAL_CATEGORIES.map(c => `<option value="${c}" ${state.newMealCategory === c ? 'selected' : ''}>${c}</option>`).join('')}
+        </select>
         <button class="add-btn enabled" style="width:auto; padding:0 16px;" onclick="addOtherMeal()">Add</button>
       </div>
 
       ${(() => {
-        const others = state.meals.filter(m => m.type !== 'Core rotation');
+        let others = state.meals.filter(m => m.type !== 'Core rotation');
+        if (state.categoryFilter !== 'All') others = others.filter(m => (m.category || 'Others') === state.categoryFilter);
         if (others.length === 0) return `<div class="empty-state">Nothing logged here yet.</div>`;
         const sorted = [...others].sort((a, b) => (mealDaysSince(b.lastHad) ?? 9999) - (mealDaysSince(a.lastHad) ?? 9999));
         return sorted.map(m => mealRowHTML(m, 'Inspiration')).join('');
