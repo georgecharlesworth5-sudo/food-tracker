@@ -314,13 +314,13 @@ async function loadMeals() {
   if (state.activeTab === "meals") render();
 }
 
-async function logMealToSheet(name, category, btnEl) {
+async function logMealToSheet(name, category, btnEl, justAdd) {
   if (btnEl) { btnEl.disabled = true; btnEl.textContent = "Saving…"; }
   try {
     const res = await fetch(`${WORKER_URL}/log`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, category })
+      body: JSON.stringify({ name, category, justAdd: !!justAdd })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -339,7 +339,7 @@ function addOtherMeal() {
   const category = catSelect?.value || "Others";
   if (!name) return;
   input.value = "";
-  logMealToSheet(name, category, null);
+  logMealToSheet(name, category, null, true);
 }
 
 function setCategoryFilter(cat) {
