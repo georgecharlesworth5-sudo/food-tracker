@@ -149,7 +149,7 @@ let state = {
   water: {},
   fastStart: null,
   meals: [], mealsSync: "Connecting…", mealsSyncCls: "", newMealName: "",
-  weekPlan: {}, assigningName: null, categoryFilter: "All", newMealCategories: [], showAddCats: false,
+  weekPlan: {}, assigningName: null, categoryFilter: "All", newMealCategories: [], showAddCats: false, newMealName: "",
 };
 
 function loadState() {
@@ -334,11 +334,10 @@ async function logMealToSheet(name, category, btnEl, justAdd) {
 }
 
 function addOtherMeal() {
-  const input = document.getElementById("newMealInput");
-  const name = (input?.value || "").trim();
+  const name = state.newMealName.trim();
   const category = state.newMealCategories.length ? state.newMealCategories.join(", ") : "Others";
   if (!name) return;
-  input.value = "";
+  state.newMealName = "";
   state.newMealCategories = [];
   state.showAddCats = false;
   logMealToSheet(name, category, null, true);
@@ -659,7 +658,7 @@ function render() {
 
       <div style="margin-top:16px" class="card-label">Add a meal</div>
       <div class="input-wrap" style="display:flex; gap:8px;">
-        <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" style="margin-bottom:0" />
+        <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" style="margin-bottom:0" value="${state.newMealName}" oninput="state.newMealName=this.value" />
         <button class="add-btn enabled" style="width:auto; padding:0 16px;" onclick="addOtherMeal()">Add</button>
       </div>
       <button class="cat-toggle-link" onclick="toggleAddCatsPicker()">
