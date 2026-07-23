@@ -35,15 +35,15 @@
     .sync-text.err { color: #ef4444; }
     .refresh-link { background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 11px; text-decoration: underline; }
 
-    .meal-row { background: #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 6px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .meal-row { background: #1e293b; border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
     .meal-dial { width: 40px; height: 26px; border-radius: 13px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #0f172a; }
-    .meal-info { flex: 1; min-width: 0; }
+    .meal-info { flex: 1; min-width: 0; text-align: left; }
     .meal-name { font-size: 14px; font-weight: 500; color: #f1f5f9; }
     .meal-meta { font-size: 11px; color: #64748b; margin-top: 1px; }
     .meal-had-btn { background: #334155; color: #a78bfa; border: none; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; flex: 0 0 auto; }
     .meal-had-btn:disabled { opacity: 0.5; }
     .meal-row-wrap { margin-bottom: 6px; }
-    .meal-row-actions { display: flex; gap: 6px; justify-content: center; }
+    .meal-row-actions { display: flex; gap: 6px; flex: 0 0 auto; }
     .assign-btn { background: #0f172a; color: #64748b; border: 1px solid #334155; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; }
     .assign-btn.active { background: #a78bfa; color: #0f172a; border-color: #a78bfa; }
     .day-picker { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; padding: 8px 4px 2px; }
@@ -57,12 +57,12 @@
     .cat-toggle-link { background: none; border: none; color: #64748b; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 6px 0 0; display: block; text-align: left; }
 
     .week-card { background: #1e293b; border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; }
-    .week-header { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .week-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .week-clear-btn { background: transparent; border: none; color: #64748b; font-size: 11px; text-decoration: underline; cursor: pointer; }
-    .week-day-row { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #0f172a; }
+    .week-day-row { display: flex; align-items: center; padding: 7px 0; border-bottom: 1px solid #0f172a; }
     .week-day-row:last-child { border-bottom: none; }
     .week-day-name { width: 40px; flex: 0 0 auto; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .week-day-meal { font-size: 13px; color: #f1f5f9; }
+    .week-day-meal { flex: 1; font-size: 13px; color: #f1f5f9; text-align: left; }
     .week-day-meal.empty { color: #475569; font-style: italic; }
     .week-day-clear { background: transparent; border: none; color: #475569; font-size: 15px; cursor: pointer; padding: 0 4px; }
   </style>
