@@ -110,6 +110,7 @@
     .cat-chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: #94a3b8; cursor: pointer; font-size: 12px; white-space: nowrap; }
     .cat-chip.active { background: #a78bfa; border-color: #a78bfa; color: #0f172a; font-weight: 600; }
     .cat-chip:active { background: #334155; }
+    .cat-toggle-link { background: none; border: none; color: #64748b; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 6px 0 0; display: block; text-align: left; }
     .seed-names { font-size: 12px; color: #64748b; line-height: 1.6; margin-bottom: 10px; }
 
     .week-card { background: #1e293b; border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; }
@@ -148,7 +149,7 @@ let state = {
   water: {},
   fastStart: null,
   meals: [], mealsSync: "Connecting…", mealsSyncCls: "", newMealName: "",
-  weekPlan: {}, assigningName: null, categoryFilter: "All", newMealCategories: [],
+  weekPlan: {}, assigningName: null, categoryFilter: "All", newMealCategories: [], showAddCats: false,
 };
 
 function loadState() {
@@ -339,7 +340,13 @@ function addOtherMeal() {
   if (!name) return;
   input.value = "";
   state.newMealCategories = [];
+  state.showAddCats = false;
   logMealToSheet(name, category, null, true);
+}
+
+function toggleAddCatsPicker() {
+  state.showAddCats = !state.showAddCats;
+  render();
 }
 
 function categoryList(cat) {
@@ -651,13 +658,18 @@ function render() {
       </div>
 
       <div style="margin-top:16px" class="card-label">Add a meal</div>
-      <div class="input-wrap">
-        <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" />
+      <div class="input-wrap" style="display:flex; gap:8px;">
+        <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" style="margin-bottom:0" />
+        <button class="add-btn enabled" style="width:auto; padding:0 16px;" onclick="addOtherMeal()">Add</button>
       </div>
-      <div class="cat-chips" style="margin-bottom:10px;">
-        ${MEAL_CATEGORIES.map(c => `<button class="cat-chip ${state.newMealCategories.includes(c) ? 'active' : ''}" onclick="toggleNewMealCategory('${c}')">${c}</button>`).join('')}
-      </div>
-      <button class="add-btn enabled" onclick="addOtherMeal()">Add</button>
+      <button class="cat-toggle-link" onclick="toggleAddCatsPicker()">
+        ${state.newMealCategories.length ? state.newMealCategories.join(', ') : (state.showAddCats ? 'Hide categories' : '+ Add categories (optional)')}
+      </button>
+      ${state.showAddCats ? `
+        <div class="cat-chips" style="margin-top:8px;">
+          ${MEAL_CATEGORIES.map(c => `<button class="cat-chip ${state.newMealCategories.includes(c) ? 'active' : ''}" onclick="toggleNewMealCategory('${c}')">${c}</button>`).join('')}
+        </div>
+      ` : ''}
 
       <div style="margin-top:16px" class="card-label">Meals</div>
       ${(() => {
