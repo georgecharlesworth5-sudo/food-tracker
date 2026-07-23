@@ -148,7 +148,7 @@ let state = {
   water: {},
   fastStart: null,
   meals: [], mealsSync: "Connecting…", mealsSyncCls: "", newMealName: "",
-  weekPlan: {}, assigningName: null, categoryFilter: "All", newMealCategory: MEAL_CATEGORIES[0],
+  weekPlan: {}, assigningName: null, categoryFilter: "All", newMealCategories: [],
 };
 
 function loadState() {
@@ -287,7 +287,7 @@ function mealRowHTML(m) {
         <div class="meal-dial" style="background:${mealDialColor(days)}">${mealDialLabel(days)}</div>
         <div class="meal-info">
           <div class="meal-name">${m.name}</div>
-          <div class="meal-meta">${m.category || 'Others'} · ${m.timesHad} time${m.timesHad === 1 ? '' : 's'} logged</div>
+          <div class="meal-meta">${categoryList(m.category).join(', ')} · ${m.timesHad} time${m.timesHad === 1 ? '' : 's'} logged</div>
         </div>
         <div class="meal-row-actions">
           <button class="assign-btn ${isAssigning ? 'active' : ''}" onclick="toggleAssign('${escName}')">Assign</button>
@@ -334,12 +334,23 @@ async function logMealToSheet(name, category, btnEl, justAdd) {
 
 function addOtherMeal() {
   const input = document.getElementById("newMealInput");
-  const catSelect = document.getElementById("newMealCategory");
   const name = (input?.value || "").trim();
-  const category = catSelect?.value || "Others";
+  const category = state.newMealCategories.length ? state.newMealCategories.join(", ") : "Others";
   if (!name) return;
   input.value = "";
+  state.newMealCategories = [];
   logMealToSheet(name, category, null, true);
+}
+
+function categoryList(cat) {
+  return (cat || "Others").split(",").map(s => s.trim()).filter(Boolean);
+}
+
+function toggleNewMealCategory(cat) {
+  const i = state.newMealCategories.indexOf(cat);
+  if (i >= 0) state.newMealCategories.splice(i, 1);
+  else state.newMealCategories.push(cat);
+  render();
 }
 
 function setCategoryFilter(cat) {
@@ -640,18 +651,18 @@ function render() {
       </div>
 
       <div style="margin-top:16px" class="card-label">Add a meal</div>
-      <div class="input-wrap" style="display:flex; gap:8px;">
-        <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" style="margin-bottom:0" />
-        <select class="cat-select" id="newMealCategory" style="width:auto;" onchange="state.newMealCategory=this.value">
-          ${MEAL_CATEGORIES.map(c => `<option value="${c}" ${state.newMealCategory === c ? 'selected' : ''}>${c}</option>`).join('')}
-        </select>
-        <button class="add-btn enabled" style="width:auto; padding:0 16px;" onclick="addOtherMeal()">Add</button>
+      <div class="input-wrap">
+        <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" />
       </div>
+      <div class="cat-chips" style="margin-bottom:10px;">
+        ${MEAL_CATEGORIES.map(c => `<button class="cat-chip ${state.newMealCategories.includes(c) ? 'active' : ''}" onclick="toggleNewMealCategory('${c}')">${c}</button>`).join('')}
+      </div>
+      <button class="add-btn enabled" onclick="addOtherMeal()">Add</button>
 
       <div style="margin-top:16px" class="card-label">Meals</div>
       ${(() => {
         let meals = state.meals;
-        if (state.categoryFilter !== 'All') meals = meals.filter(m => (m.category || 'Others') === state.categoryFilter);
+        if (state.categoryFilter !== 'All') meals = meals.filter(m => categoryList(m.category).includes(state.categoryFilter));
         if (meals.length === 0) return `<div class="empty-state">No meals in this category yet.</div>`;
         const sorted = [...meals].sort((a, b) => (mealDaysSince(b.lastHad) ?? 9999) - (mealDaysSince(a.lastHad) ?? 9999));
         return sorted.map(m => mealRowHTML(m)).join('');
