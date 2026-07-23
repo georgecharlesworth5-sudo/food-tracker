@@ -5,131 +5,66 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Food Tracker" />
-  <title>Food & Drink Tracker</title>
+  <meta name="apple-mobile-web-app-title" content="Meal Planner" />
+  <title>Charlesworth's Meal Planner</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
     input, select, button { font-family: inherit; }
-    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     .fade-in { animation: fadeIn 0.25s ease; }
 
-    .header { background: #1e293b; padding: calc(20px + env(safe-area-inset-top)) 20px 0; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 100; }
-    .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-    .date-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; margin-bottom: 2px; }
-    .page-title { font-size: 22px; font-weight: 700; color: #f8fafc; }
-    .goal-btn { background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 12px; text-decoration: underline; }
-    .goal-edit { display: flex; gap: 6px; align-items: center; }
-    .goal-input { width: 70px; padding: 4px 6px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; font-size: 14px; }
-    .goal-set-btn { background: #3b82f6; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 13px; }
+    .header { background: #1e293b; padding: calc(24px + env(safe-area-inset-top)) 20px 20px; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 100; text-align: center; }
+    .page-title { font-size: 28px; font-weight: 800; color: #f8fafc; letter-spacing: -0.02em; line-height: 1.15; }
 
-    .stats-row { display: flex; align-items: center; gap: 20px; padding-bottom: 20px; }
-    .stats-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .stat-card { background: #0f172a; border-radius: 10px; padding: 10px 12px; }
-    .stat-label { font-size: 11px; color: #64748b; margin-bottom: 2px; }
-    .stat-value { font-size: 18px; font-weight: 700; }
-    .stat-unit { font-size: 10px; color: #475569; }
-
-    .tabs { display: flex; }
-    .tab-btn { flex: 1; padding: 10px 0; background: transparent; border: none; border-bottom: 2px solid transparent; color: #64748b; cursor: pointer; font-weight: 600; font-size: 13px; }
-    .tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; }
-
-    .content { padding: 16px; }
-    .card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+    .content { padding: 16px; text-align: center; }
     .card-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
 
     .input-wrap { position: relative; margin-bottom: 10px; }
     .text-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; outline: none; }
     .text-input:focus { border-color: #3b82f6; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-    .num-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; outline: none; }
-    .num-input:focus { border-color: #3b82f6; }
-    select.cat-select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 13px; outline: none; -webkit-appearance: none; }
-    .spike-check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; padding: 0 4px; white-space: nowrap; }
-    .spike-check input { width: auto; }
-    .entry-spike { color: #ef4444; font-size: 13px; }
-    .add-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease; }
+    .add-btn { padding: 12px; border-radius: 8px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease; }
     .add-btn.enabled { background: #3b82f6; color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,0.4); }
     .add-btn.enabled:active { background: #2563eb; transform: scale(0.98); box-shadow: 0 2px 6px rgba(59,130,246,0.3); }
-    .add-btn.disabled { background: #1e293b; color: #64748b; border: 1px solid #334155; box-shadow: none; cursor: default; }
 
     .empty-state { text-align: center; padding: 40px 20px; color: #475569; font-size: 14px; line-height: 1.6; }
-    .cat-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
-    .cat-name { font-size: 12px; color: #94a3b8; font-weight: 600; }
-    .cat-total { font-size: 12px; color: #64748b; }
-    .entry-card { background: #1e293b; border-radius: 10px; padding: 10px 14px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-    .entry-name { font-size: 14px; font-weight: 500; color: #f1f5f9; }
-    .entry-time { font-size: 11px; color: #475569; margin-top: 1px; }
-    .entry-right { display: flex; align-items: center; gap: 10px; }
-    .entry-cal { font-size: 15px; font-weight: 700; color: #94a3b8; }
-    .remove-btn { background: transparent; border: none; color: #475569; cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
 
-    /* Water */
-    .water-card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
-    .water-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .water-title { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-    .water-amount { font-size: 13px; font-weight: 700; color: #38bdf8; }
-    .water-bar-bg { height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
-    .water-bar { height: 100%; border-radius: 4px; background: #38bdf8; transition: width 0.4s ease; }
-    .water-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .water-chip { flex: 1; min-width: 60px; padding: 8px 4px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: #38bdf8; cursor: pointer; font-size: 13px; font-weight: 600; text-align: center; }
-    .water-chip:active { background: #0c4a6e; }
-    .water-undo { background: transparent; border: none; color: #475569; cursor: pointer; font-size: 12px; text-decoration: underline; margin-top: 8px; display: block; }
-    .water-complete { color: #22c55e; font-size: 12px; margin-top: 4px; text-align: center; display: block; }
-
-    /* Fasting timer */
-    .fast-card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
-    .fast-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .fast-title { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-    .fast-status { font-size: 12px; font-weight: 600; }
-    .fast-countdown { text-align: center; margin-bottom: 12px; }
-    .fast-time { font-size: 42px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
-    .fast-sublabel { font-size: 11px; color: #64748b; margin-top: 4px; }
-    .fast-bar-bg { height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
-    .fast-bar { height: 100%; border-radius: 4px; transition: width 1s ease; }
-    .fast-btn { width: 100%; padding: 11px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; }
-    .fast-btn-start { background: #f59e0b; color: #000; }
-    .fast-btn-stop { background: #334155; color: #94a3b8; }
-    .fast-started { font-size: 11px; color: #64748b; text-align: center; margin-top: 8px; }
-
-    /* Meals */
-    .sync-line { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .sync-line { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px; }
     .sync-text { font-size: 11px; color: #64748b; }
     .sync-text.ok { color: #22c55e; }
     .sync-text.err { color: #ef4444; }
     .refresh-link { background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 11px; text-decoration: underline; }
-    .meal-row { background: #1e293b; border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+
+    .meal-row { background: #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 6px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .meal-dial { width: 40px; height: 26px; border-radius: 13px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #0f172a; }
     .meal-info { flex: 1; min-width: 0; }
     .meal-name { font-size: 14px; font-weight: 500; color: #f1f5f9; }
     .meal-meta { font-size: 11px; color: #64748b; margin-top: 1px; }
     .meal-had-btn { background: #334155; color: #a78bfa; border: none; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; flex: 0 0 auto; }
     .meal-had-btn:disabled { opacity: 0.5; }
-    .cat-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .meal-row-wrap { margin-bottom: 6px; }
+    .meal-row-actions { display: flex; gap: 6px; justify-content: center; }
+    .assign-btn { background: #0f172a; color: #64748b; border: 1px solid #334155; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .assign-btn.active { background: #a78bfa; color: #0f172a; border-color: #a78bfa; }
+    .day-picker { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; padding: 8px 4px 2px; }
+    .day-chip { background: #0f172a; color: #a78bfa; border: 1px solid #334155; padding: 5px 9px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .day-chip:active { background: #334155; }
+
+    .cat-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 8px; }
     .cat-chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: #94a3b8; cursor: pointer; font-size: 12px; white-space: nowrap; }
     .cat-chip.active { background: #a78bfa; border-color: #a78bfa; color: #0f172a; font-weight: 600; }
     .cat-chip:active { background: #334155; }
     .cat-toggle-link { background: none; border: none; color: #64748b; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 6px 0 0; display: block; text-align: left; }
-    .seed-names { font-size: 12px; color: #64748b; line-height: 1.6; margin-bottom: 10px; }
 
     .week-card { background: #1e293b; border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; }
-    .week-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .week-header { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 10px; }
     .week-clear-btn { background: transparent; border: none; color: #64748b; font-size: 11px; text-decoration: underline; cursor: pointer; }
-    .week-day-row { display: flex; align-items: center; padding: 7px 0; border-bottom: 1px solid #0f172a; }
+    .week-day-row { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #0f172a; }
     .week-day-row:last-child { border-bottom: none; }
     .week-day-name { width: 40px; flex: 0 0 auto; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .week-day-meal { flex: 1; font-size: 13px; color: #f1f5f9; }
+    .week-day-meal { font-size: 13px; color: #f1f5f9; }
     .week-day-meal.empty { color: #475569; font-style: italic; }
     .week-day-clear { background: transparent; border: none; color: #475569; font-size: 15px; cursor: pointer; padding: 0 4px; }
-
-    .meal-row-wrap { margin-bottom: 6px; }
-    .meal-row-actions { display: flex; gap: 6px; flex: 0 0 auto; }
-    .assign-btn { background: #0f172a; color: #64748b; border: 1px solid #334155; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; }
-    .assign-btn.active { background: #a78bfa; color: #0f172a; border-color: #a78bfa; }
-    .day-picker { display: flex; gap: 5px; flex-wrap: wrap; padding: 8px 4px 2px; }
-    .day-chip { background: #0f172a; color: #a78bfa; border: 1px solid #334155; padding: 5px 9px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; }
-    .day-chip:active { background: #334155; }
   </style>
 </head>
 <body>
@@ -138,28 +73,27 @@
 const WORKER_URL = "https://meal-planner-worker.georgecharlesworth5.workers.dev";
 const DAYS_OF_WEEK = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const MEAL_CATEGORIES = ["Pasta", "Rice/Pulses", "Potato", "Noodles", "Veggie", "Fish", "Oven Bakes", "Slow Cooker", "Others"];
-const CATEGORIES = ["🍳 Breakfast", "🥗 Lunch", "🍽️ Tea", "☕ Snack / Drink"];
-const DEFAULT_GOAL = 2100;
-const WATER_GOAL_ML = 2500;
 
 let state = {
-  entries: {}, goal: DEFAULT_GOAL, activeTab: "meals",
-  formName: "", formCal: "", formCat: CATEGORIES[0], formTime: "", formSpike: false,
-  editGoal: false, goalInput: DEFAULT_GOAL, searchText: "",
-  water: {},
-  fastStart: null,
-  meals: [], mealsSync: "Connecting…", mealsSyncCls: "", newMealName: "",
-  weekPlan: {}, assigningName: null, categoryFilter: "All", newMealCategories: [], showAddCats: false, newMealName: "",
+  meals: [], mealsSync: "Connecting…", mealsSyncCls: "",
+  weekPlan: {}, assigningName: null, categoryFilter: "All",
+  newMealName: "", newMealCategories: [], showAddCats: false,
 };
 
-function loadState() {
-  try { state.entries = JSON.parse(localStorage.getItem("cal_entries") || "{}"); } catch {}
-  try { state.water = JSON.parse(localStorage.getItem("cal_water") || "{}"); } catch {}
-  state.fastStart = localStorage.getItem("cal_fast_start") ? parseInt(localStorage.getItem("cal_fast_start")) : null;
-  const g = parseInt(localStorage.getItem("cal_goal"));
-  if (!isNaN(g) && g > 0) { state.goal = g; state.goalInput = g; }
-  // Restart fast tick if active
-  if (state.fastStart) startFastTick();
+async function loadMeals() {
+  state.mealsSync = "Syncing…"; state.mealsSyncCls = "";
+  render();
+  try {
+    const res = await fetch(`${WORKER_URL}/meals`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    state.meals = data.meals || [];
+    state.mealsSync = "Synced with Sheet"; state.mealsSyncCls = "ok";
+  } catch (err) {
+    console.error("loadMeals failed", err);
+    state.mealsSync = "Could not reach the Sheet"; state.mealsSyncCls = "err";
+  }
+  render();
 }
 
 async function loadWeekPlan() {
@@ -173,7 +107,7 @@ async function loadWeekPlan() {
     console.error("loadWeekPlan failed", err);
     state.mealsSync = "Could not reach the Sheet"; state.mealsSyncCls = "err";
   }
-  if (state.activeTab === "meals") render();
+  render();
 }
 
 async function syncMealsTab() {
@@ -239,20 +173,6 @@ async function clearWeekPlan() {
   await loadWeekPlan();
 }
 
-function saveEntries() { localStorage.setItem("cal_entries", JSON.stringify(state.entries)); }
-function saveWater() { localStorage.setItem("cal_water", JSON.stringify(state.water)); }
-
-function getTodayKey() { return new Date().toISOString().slice(0, 10); }
-function formatTime(ts) { return new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); }
-function formatDate(key) {
-  const d = new Date(key + "T12:00:00");
-  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-}
-
-function todayEntries() { return state.entries[getTodayKey()] || []; }
-function todayTotal() { return todayEntries().reduce((s, e) => s + e.cal, 0); }
-function todayWater() { return state.water[getTodayKey()] || 0; }
-
 function mealDaysSince(dateStr) {
   if (!dateStr) return null;
   const diff = (Date.now() - new Date(dateStr + "T00:00:00").getTime()) / 86400000;
@@ -271,6 +191,10 @@ function mealDialLabel(days) {
   if (days === null) return "new";
   if (days === 0) return "today";
   return days + "d";
+}
+
+function categoryList(cat) {
+  return (cat || "Others").split(",").map(s => s.trim()).filter(Boolean);
 }
 
 function mealRowHTML(m) {
@@ -297,22 +221,6 @@ function mealRowHTML(m) {
       </div>
       ${picker}
     </div>`;
-}
-
-async function loadMeals() {
-  state.mealsSync = "Syncing…"; state.mealsSyncCls = "";
-  if (state.activeTab === "meals") render();
-  try {
-    const res = await fetch(`${WORKER_URL}/meals`);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    state.meals = data.meals || [];
-    state.mealsSync = "Synced with Sheet"; state.mealsSyncCls = "ok";
-  } catch (err) {
-    console.error("loadMeals failed", err);
-    state.mealsSync = "Could not reach the Sheet"; state.mealsSyncCls = "err";
-  }
-  if (state.activeTab === "meals") render();
 }
 
 async function logMealToSheet(name, category, btnEl, justAdd) {
@@ -348,10 +256,6 @@ function toggleAddCatsPicker() {
   render();
 }
 
-function categoryList(cat) {
-  return (cat || "Others").split(",").map(s => s.trim()).filter(Boolean);
-}
-
 function toggleNewMealCategory(cat) {
   const i = state.newMealCategories.indexOf(cat);
   if (i >= 0) state.newMealCategories.splice(i, 1);
@@ -364,272 +268,14 @@ function setCategoryFilter(cat) {
   render();
 }
 
-function startFast() {
-  state.fastStart = Date.now();
-  localStorage.setItem("cal_fast_start", state.fastStart);
-  startFastTick();
-  renderFast();
-}
-
-function stopFast() {
-  state.fastStart = null;
-  localStorage.removeItem("cal_fast_start");
-  if (window._fastTimer) { clearInterval(window._fastTimer); window._fastTimer = null; }
-  renderFast();
-}
-
-function startFastTick() {
-  if (window._fastTimer) clearInterval(window._fastTimer);
-  window._fastTimer = setInterval(renderFast, 1000);
-}
-
-function renderFast() {
-  const el = document.getElementById("fastCard");
-  if (!el) { if (window._fastTimer) clearInterval(window._fastTimer); return; }
-  const FAST_MS = 15 * 60 * 60 * 1000;
-  if (!state.fastStart) {
-    el.innerHTML = `
-      <div class="fast-top">
-        <span class="fast-title">⏱ Fasting Timer</span>
-        <span class="fast-status" style="color:#64748b">Not started</span>
-      </div>
-      <div class="fast-countdown">
-        <div class="fast-time" style="color:#475569">15:00</div>
-        <div class="fast-sublabel">15 hour countdown</div>
-      </div>
-      <div class="fast-bar-bg"><div class="fast-bar" style="width:0%;background:#f59e0b"></div></div>
-      <button class="fast-btn fast-btn-start" onclick="startFast()">Start fast</button>
-    `;
-    return;
-  }
-  const elapsed = Date.now() - state.fastStart;
-  const remaining = Math.max(FAST_MS - elapsed, 0);
-  const pct = Math.min((elapsed / FAST_MS) * 100, 100);
-  const done = remaining === 0;
-  const h = Math.floor(remaining / 3600000);
-  const m = Math.floor((remaining % 3600000) / 60000);
-  const s = Math.floor((remaining % 60000) / 1000);
-  const timeStr = done ? "Complete!" : `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  const color = done ? "#22c55e" : pct > 80 ? "#a78bfa" : "#f59e0b";
-  const startedAt = new Date(state.fastStart).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  el.innerHTML = `
-    <div class="fast-top">
-      <span class="fast-title">⏱ Fasting Timer</span>
-      <span class="fast-status" style="color:${color}">${done ? "✓ Goal reached!" : "Active"}</span>
-    </div>
-    <div class="fast-countdown">
-      <div class="fast-time" style="color:${color}">${timeStr}</div>
-      <div class="fast-sublabel">${done ? "15 hours complete 🎉" : "remaining of 15 hours"}</div>
-    </div>
-    <div class="fast-bar-bg"><div class="fast-bar" style="width:${pct}%;background:${color}"></div></div>
-    <button class="fast-btn fast-btn-stop" onclick="stopFast()">End fast</button>
-    <div class="fast-started">Started at ${startedAt}</div>
-  `;
-}
-
-function addWater(ml) {
-  const key = getTodayKey();
-  state.water[key] = (state.water[key] || 0) + ml;
-  saveWater();
-  renderWater();
-}
-
-function undoWater() {
-  const key = getTodayKey();
-  state.water[key] = Math.max(0, (state.water[key] || 0) - 550);
-  saveWater();
-  renderWater();
-}
-
-function renderWater() {
-  const w = todayWater();
-  const pct = Math.min((w / WATER_GOAL_ML) * 100, 100);
-  const litres = (w / 1000).toFixed(2).replace(/\.?0+$/, '') || '0';
-  const goalL = (WATER_GOAL_ML / 1000).toFixed(1);
-  const amountEl = document.getElementById("waterAmount");
-  const barEl = document.getElementById("waterBar");
-  const msgEl = document.getElementById("waterMsg");
-  if (amountEl) amountEl.textContent = `${litres}L / ${goalL}L`;
-  if (barEl) barEl.style.width = `${pct}%`;
-  if (msgEl) {
-    msgEl.innerHTML = w >= WATER_GOAL_ML
-      ? '<span class="water-complete">✓ Goal reached!</span>'
-      : '<button class="water-undo" onclick="undoWater()">↩ Undo last</button>';
-  }
-}
-
-function addEntry(name, cal, category, timeEaten, heartSpike) {
-  if (!name || !cal || isNaN(cal)) return;
-  const key = getTodayKey();
-  const entry = {
-    id: Date.now() + Math.random(),
-    name, cal: Math.round(cal), category,
-    ts: Date.now(),
-    timeEaten: timeEaten || formatTime(Date.now()),
-    heartSpike: !!heartSpike,
-  };
-  if (!state.entries[key]) state.entries[key] = [];
-  state.entries[key].push(entry);
-  saveEntries();
-  state.formName = ""; state.formCal = ""; state.searchText = ""; state.formTime = ""; state.formSpike = false;
-  render();
-}
-
-function removeEntry(id) {
-  const key = getTodayKey();
-  state.entries[key] = (state.entries[key] || []).filter(e => e.id !== id);
-  saveEntries();
-  render();
-}
-
 function render() {
   const app = document.getElementById("app");
-  const entries = todayEntries();
-  const total = todayTotal();
-  const remaining = state.goal - total;
-  const pct = Math.min((total / state.goal) * 100, 100);
-  const ringColor = pct < 80 ? "#22c55e" : pct < 100 ? "#f59e0b" : "#ef4444";
-  const remColor = remaining >= 0 ? "#22c55e" : "#ef4444";
-  const circumference = 2 * Math.PI * 33;
-  const offset = circumference * (1 - pct / 100);
-
-  const grouped = {};
-  CATEGORIES.forEach(c => { grouped[c] = entries.filter(e => e.category === c); });
-
-  const w = todayWater();
-  const wPct = Math.min((w / WATER_GOAL_ML) * 100, 100);
-  const wL = (w / 1000).toFixed(2).replace(/\.?0+$/, '') || '0';
-  const goalL = (WATER_GOAL_ML / 1000).toFixed(1);
 
   app.innerHTML = `
     <div class="header">
-      ${state.activeTab !== 'meals' ? `
-      <div class="header-top">
-        <div>
-          <div class="date-label">${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
-          <div class="page-title">Food & Drink</div>
-        </div>
-        <div>
-          ${state.editGoal ? `
-            <div class="goal-edit">
-              <input class="goal-input" type="number" id="goalInput" value="${state.goalInput}" />
-              <button class="goal-set-btn" onclick="setGoal()">Set</button>
-            </div>
-          ` : `
-            <button class="goal-btn" onclick="openGoalEdit()">Goal: ${state.goal.toLocaleString()} kcal</button>
-          `}
-        </div>
-      </div>
-
-      <div class="stats-row">
-        <svg width="80" height="80" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="33" fill="none" stroke="#1e3a5f" stroke-width="8"/>
-          <circle cx="40" cy="40" r="33" fill="none" stroke="${ringColor}" stroke-width="8"
-            stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
-            stroke-linecap="round" transform="rotate(-90 40 40)" style="transition:stroke-dashoffset 0.5s ease"/>
-          <text x="40" y="38" text-anchor="middle" fill="#f8fafc" font-size="14" font-weight="700">${Math.round(pct)}%</text>
-          <text x="40" y="52" text-anchor="middle" fill="#94a3b8" font-size="9">of goal</text>
-        </svg>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Consumed</div>
-            <div class="stat-value" style="color:#f8fafc">${total.toLocaleString()}</div>
-            <div class="stat-unit">kcal</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">${remaining >= 0 ? "Remaining" : "Over by"}</div>
-            <div class="stat-value" style="color:${remColor}">${Math.abs(remaining).toLocaleString()}</div>
-            <div class="stat-unit">kcal</div>
-          </div>
-        </div>
-      </div>
-      ` : `
-      <div style="padding: 10px 0 4px; font-size: 22px; font-weight: 700; color: #f8fafc;">Meals</div>
-      `}
-
-      <div class="tabs">
-        <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Meal Planner</button>
-        <button class="tab-btn ${state.activeTab === 'today' ? 'active' : ''}" onclick="switchTab('today')">Calorie Counter</button>
-      </div>
+      <div class="page-title">Charlesworth's Meal Planner</div>
     </div>
 
-    <!-- TODAY TAB -->
-    ${state.activeTab === 'today' ? `
-    <div class="content fade-in">
-      <div class="fast-card" id="fastCard"></div>
-
-      <div class="water-card">
-        <div class="water-top">
-          <span class="water-title">💧 Water</span>
-          <span class="water-amount" id="waterAmount">${wL}L / ${goalL}L</span>
-        </div>
-        <div class="water-bar-bg">
-          <div class="water-bar" id="waterBar" style="width:${wPct}%"></div>
-        </div>
-        <div class="water-chips">
-          <button class="water-chip" onclick="addWater(550)">+550ml</button>
-        </div>
-        <div id="waterMsg">${w >= WATER_GOAL_ML
-          ? '<span class="water-complete">✓ Goal reached!</span>'
-          : '<button class="water-undo" onclick="undoWater()">↩ Undo last</button>'
-        }</div>
-      </div>
-
-      <div class="card">
-        <div class="card-label">Add food / drink</div>
-        <div class="input-wrap">
-          <input class="text-input" type="text" id="foodName" placeholder="Type food name…" value="${state.formName}" oninput="state.formName=this.value" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-        </div>
-        <div class="form-row">
-          <input class="num-input" type="number" id="foodCal" placeholder="Calories (kcal)" value="${state.formCal}" oninput="state.formCal=this.value" />
-          <select class="cat-select" id="foodCat" onchange="state.formCat=this.value">
-            ${CATEGORIES.map(c => `<option value="${c}" ${state.formCat === c ? 'selected' : ''}>${c}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-row">
-          <input class="num-input" type="time" id="foodTime" value="${state.formTime || ''}" oninput="state.formTime=this.value" />
-          <label class="spike-check">
-            <input type="checkbox" id="foodSpike" ${state.formSpike ? 'checked' : ''} onchange="state.formSpike=this.checked" />
-            Heart rate spike
-          </label>
-        </div>
-        <button class="add-btn ${state.formName && state.formCal ? 'enabled' : 'disabled'}" onclick="submitForm()">Add to log</button>
-      </div>
-
-      ${entries.length === 0 ? `
-        <div class="empty-state">Nothing logged yet today.<br>Add an item above.</div>
-      ` : `
-        ${CATEGORIES.map(cat => {
-          const items = grouped[cat];
-          if (!items.length) return '';
-          const catTotal = items.reduce((s, e) => s + e.cal, 0);
-          return `
-            <div style="margin-bottom:14px">
-              <div class="cat-header">
-                <span class="cat-name">${cat}</span>
-                <span class="cat-total">${catTotal} kcal</span>
-              </div>
-              ${items.map(e => `
-                <div class="entry-card">
-                  <div>
-                    <div class="entry-name">${e.name}${e.heartSpike ? ' <span class="entry-spike" title="Heart rate spike">❤️</span>' : ''}</div>
-                    <div class="entry-time">${e.timeEaten || formatTime(e.ts)}</div>
-                  </div>
-                  <div class="entry-right">
-                    <span class="entry-cal">${e.cal}</span>
-                    <button class="remove-btn" onclick="removeEntry(${e.id})">✕</button>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          `;
-        }).join('')}
-      `}
-    </div>
-    ` : ''}
-
-    <!-- MEALS TAB -->
-    ${state.activeTab === 'meals' ? `
     <div class="content fade-in">
       <div class="sync-line">
         <span class="sync-text ${state.mealsSyncCls}">${state.mealsSync}</span>
@@ -657,7 +303,7 @@ function render() {
       </div>
 
       <div style="margin-top:16px" class="card-label">Add a meal</div>
-      <div class="input-wrap" style="display:flex; gap:8px;">
+      <div class="input-wrap" style="display:flex; gap:8px; justify-content:center;">
         <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" style="margin-bottom:0" value="${state.newMealName}" oninput="state.newMealName=this.value" />
         <button class="add-btn enabled" style="width:auto; padding:0 16px;" onclick="addOtherMeal()">Add</button>
       </div>
@@ -679,45 +325,11 @@ function render() {
         return sorted.map(m => mealRowHTML(m)).join('');
       })()}
     </div>
-    ` : ''}
   `;
 }
 
-function switchTab(tab) {
-  state.activeTab = tab;
-  render();
-  renderFast();
-  if (tab === 'meals') { syncMealsTab(); }
-}
-function openGoalEdit() { state.editGoal = true; render(); document.getElementById("goalInput")?.focus(); }
-function setGoal() {
-  const v = parseInt(document.getElementById("goalInput")?.value);
-  if (!isNaN(v) && v > 0) { state.goal = v; state.goalInput = v; localStorage.setItem("cal_goal", v); }
-  state.editGoal = false; render();
-}
-function submitForm() {
-  const name = document.getElementById("foodName")?.value || state.formName;
-  const cal = document.getElementById("foodCal")?.value || state.formCal;
-  const cat = document.getElementById("foodCat")?.value || state.formCat;
-  const time = document.getElementById("foodTime")?.value || state.formTime;
-  const spike = document.getElementById("foodSpike")?.checked || false;
-  state.formName = name; state.formCal = cal; state.formCat = cat; state.formTime = time; state.formSpike = spike;
-  const timeLabel = time ? formatTimeFromInput(time) : null;
-  addEntry(name, parseFloat(cal), cat, timeLabel, spike);
-}
-
-function formatTimeFromInput(hhmm) {
-  // hhmm is "HH:MM" (24hr) from a <input type=time>; format to match formatTime's style
-  const [h, m] = hhmm.split(":").map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return formatTime(d.getTime());
-}
-
-loadState();
 render();
-renderFast();
-if (state.activeTab === 'meals') { syncMealsTab(); }
+syncMealsTab();
 </script>
 </body>
 </html>
