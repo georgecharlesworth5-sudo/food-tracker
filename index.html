@@ -219,6 +219,15 @@ function categoryTotals() {
   return totals;
 }
 
+function proteinTotals() {
+  const totals = {};
+  state.meals.forEach(m => {
+    const key = (m.proteinType || "").trim() || "Unspecified";
+    totals[key] = (totals[key] || 0) + (m.timesHad || 0);
+  });
+  return totals;
+}
+
 function mealRowHTML(m) {
   const days = mealDaysSince(m.lastHad);
   const escName = m.name.replace(/'/g, "\\'");
@@ -360,6 +369,21 @@ function render() {
             <div class="totals-row">
               <span class="totals-name">${c}</span>
               <span class="totals-count">${totals[c] || 0}</span>
+            </div>
+          `).join('');
+        })()}
+      </div>
+
+      <div class="card-label" style="margin-top:20px">Protein Totals</div>
+      <div class="totals-card">
+        ${(() => {
+          const totals = proteinTotals();
+          const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+          if (entries.length === 0) return `<div class="empty-state">No data yet.</div>`;
+          return entries.map(([name, count]) => `
+            <div class="totals-row">
+              <span class="totals-name">${name}</span>
+              <span class="totals-count">${count}</span>
             </div>
           `).join('');
         })()}
