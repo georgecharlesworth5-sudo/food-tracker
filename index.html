@@ -343,7 +343,7 @@ function render() {
       <div style="margin-top:16px" class="card-label">Meals</div>
       ${(() => {
         let meals = state.meals;
-        if (state.categoryFilters.length > 0) meals = meals.filter(m => categoryList(m.category).some(c => state.categoryFilters.includes(c)));
+        if (state.categoryFilters.length > 0) meals = meals.filter(m => state.categoryFilters.every(c => categoryList(m.category).includes(c)));
         if (meals.length === 0) return `<div class="empty-state">No meals in this category yet.</div>`;
         const sorted = [...meals].sort((a, b) => (mealDaysSince(b.lastHad) ?? 9999) - (mealDaysSince(a.lastHad) ?? 9999));
         return sorted.map(m => mealRowHTML(m)).join('');
