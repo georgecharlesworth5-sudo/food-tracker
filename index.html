@@ -86,8 +86,8 @@ const MEAL_CATEGORIES = ["Pasta", "Rice/Pulses", "Potato", "Noodles", "Bread", "
 let state = {
   activeTab: "meals",
   meals: [], mealsSync: "Connecting…", mealsSyncCls: "",
-  weekPlan: {}, assigningName: null, categoryFilter: "All",
-  newMealName: "", newMealCategories: [], showAddCats: false,
+  weekPlan: {}, assigningName: null, categoryFilters: [],
+  newMealName: "",
 };
 
 async function loadMeals() {
@@ -274,28 +274,21 @@ async function logMealToSheet(name, category, btnEl, justAdd) {
 
 function addOtherMeal() {
   const name = state.newMealName.trim();
-  const category = state.newMealCategories.length ? state.newMealCategories.join(", ") : "Others";
+  const category = state.categoryFilters.length ? state.categoryFilters.join(", ") : "Others";
   if (!name) return;
   state.newMealName = "";
-  state.newMealCategories = [];
-  state.showAddCats = false;
   logMealToSheet(name, category, null, true);
 }
 
-function toggleAddCatsPicker() {
-  state.showAddCats = !state.showAddCats;
+function toggleCategoryFilter(cat) {
+  const i = state.categoryFilters.indexOf(cat);
+  if (i >= 0) state.categoryFilters.splice(i, 1);
+  else state.categoryFilters.push(cat);
   render();
 }
 
-function toggleNewMealCategory(cat) {
-  const i = state.newMealCategories.indexOf(cat);
-  if (i >= 0) state.newMealCategories.splice(i, 1);
-  else state.newMealCategories.push(cat);
-  render();
-}
-
-function setCategoryFilter(cat) {
-  state.categoryFilter = cat;
+function clearCategoryFilters() {
+  state.categoryFilters = [];
   render();
 }
 
@@ -334,8 +327,8 @@ function render() {
 
       <div class="card-label" style="margin-top:4px">Filter by category</div>
       <div class="cat-chips">
-        <button class="cat-chip ${state.categoryFilter === 'All' ? 'active' : ''}" onclick="setCategoryFilter('All')">All</button>
-        ${MEAL_CATEGORIES.map(c => `<button class="cat-chip ${state.categoryFilter === c ? 'active' : ''}" onclick="setCategoryFilter('${c}')">${c}</button>`).join('')}
+        <button class="cat-chip ${state.categoryFilters.length === 0 ? 'active' : ''}" onclick="clearCategoryFilters()">All</button>
+        ${MEAL_CATEGORIES.map(c => `<button class="cat-chip ${state.categoryFilters.includes(c) ? 'active' : ''}" onclick="toggleCategoryFilter('${c}')">${c}</button>`).join('')}
       </div>
 
       <div style="margin-top:16px" class="card-label">Add a meal</div>
@@ -343,19 +336,14 @@ function render() {
         <input class="text-input" type="text" id="newMealInput" placeholder="Meal name" style="margin-bottom:0" value="${state.newMealName}" oninput="state.newMealName=this.value" />
         <button class="add-btn enabled" style="width:auto; padding:0 16px;" onclick="addOtherMeal()">Add</button>
       </div>
-      <button class="cat-toggle-link" onclick="toggleAddCatsPicker()">
-        ${state.newMealCategories.length ? state.newMealCategories.join(', ') : (state.showAddCats ? 'Hide categories' : '+ Add categories (optional)')}
-      </button>
-      ${state.showAddCats ? `
-        <div class="cat-chips" style="margin-top:8px;">
-          ${MEAL_CATEGORIES.map(c => `<button class="cat-chip ${state.newMealCategories.includes(c) ? 'active' : ''}" onclick="toggleNewMealCategory('${c}')">${c}</button>`).join('')}
-        </div>
-      ` : ''}
+      <div class="cat-toggle-link" style="text-decoration:none; cursor:default;">
+        Will be added as: ${state.categoryFilters.length ? state.categoryFilters.join(', ') : 'Others'}
+      </div>
 
       <div style="margin-top:16px" class="card-label">Meals</div>
       ${(() => {
         let meals = state.meals;
-        if (state.categoryFilter !== 'All') meals = meals.filter(m => categoryList(m.category).includes(state.categoryFilter));
+        if (state.categoryFilters.length > 0) meals = meals.filter(m => categoryList(m.category).some(c => state.categoryFilters.includes(c)));
         if (meals.length === 0) return `<div class="empty-state">No meals in this category yet.</div>`;
         const sorted = [...meals].sort((a, b) => (mealDaysSince(b.lastHad) ?? 9999) - (mealDaysSince(a.lastHad) ?? 9999));
         return sorted.map(m => mealRowHTML(m)).join('');
