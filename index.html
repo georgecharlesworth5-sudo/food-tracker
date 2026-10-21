@@ -62,12 +62,22 @@
     .week-card { background: #1e293b; border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; }
     .week-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .week-clear-btn { background: transparent; border: none; color: #64748b; font-size: 11px; text-decoration: underline; cursor: pointer; }
-    .week-day-row { display: flex; align-items: center; padding: 7px 0; border-bottom: 1px solid #0f172a; }
-    .week-day-row:last-child { border-bottom: none; }
+    .week-day-wrap { border-bottom: 1px solid #0f172a; }
+    .week-day-wrap:last-child { border-bottom: none; }
+    .week-day-row { display: flex; align-items: center; gap: 6px; padding: 7px 0; }
     .week-day-name { width: 40px; flex: 0 0 auto; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
     .week-day-meal { flex: 1; font-size: 13px; color: #f1f5f9; text-align: left; }
     .week-day-meal.empty { color: #475569; font-style: italic; }
     .week-day-clear { background: transparent; border: none; color: #475569; font-size: 15px; cursor: pointer; padding: 0 4px; }
+    .week-log-btn { background: #334155; color: #a78bfa; border: none; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; flex: 0 0 auto; }
+    .week-log-btn.active { background: #a78bfa; color: #0f172a; }
+    .log-panel { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; padding: 2px 0 10px; }
+    .log-panel label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .date-input { padding: 7px 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 13px; outline: none; color-scheme: dark; }
+    .date-input:focus { border-color: #3b82f6; }
+    .log-confirm-btn { background: #3b82f6; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .log-confirm-btn:disabled { opacity: 0.5; }
+    .log-cancel-btn { background: transparent; color: #64748b; border: none; font-size: 12px; cursor: pointer; padding: 8px 4px; }
 
     .totals-card { background: #1e293b; border-radius: 14px; padding: 6px 16px; }
     .totals-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #0f172a; text-align: left; }
@@ -88,7 +98,14 @@ let state = {
   meals: [], mealsSync: "Connecting…", mealsSyncCls: "",
   weekPlan: {}, assigningName: null, categoryFilters: [],
   newMealName: "",
+  loggingDay: null, logDate: "", logSaving: false,
 };
+
+function todayStr() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 async function loadMeals() {
   state.mealsSync = "Syncing…"; state.mealsSyncCls = "";
@@ -151,6 +168,7 @@ async function assignMealToDay(name, day) {
 
 async function clearDaySlot(day) {
   delete state.weekPlan[day]; // optimistic update
+  if (state.loggingDay === day) state.loggingDay = null;
   render();
   try {
     const res = await fetch(`${WORKER_URL}/weekplan`, {
@@ -169,6 +187,7 @@ async function clearDaySlot(day) {
 
 async function clearWeekPlan() {
   if (!confirm("Clear all meals assigned to this week?")) return;
+  state.loggingDay = null;
   for (const day of DAYS_OF_WEEK) {
     try {
       await fetch(`${WORKER_URL}/weekplan`, {
@@ -181,6 +200,46 @@ async function clearWeekPlan() {
     }
   }
   await loadWeekPlan();
+}
+
+// ---- Log a This Week meal with a chosen date ----
+function toggleLogPanel(day) {
+  if (state.loggingDay === day) {
+    state.loggingDay = null;
+  } else {
+    state.loggingDay = day;
+    state.logDate = todayStr(); // defaults to today, can be backdated
+  }
+  render();
+}
+
+function cancelLog() {
+  state.loggingDay = null;
+  render();
+}
+
+async function confirmLogWeekMeal(day, btnEl) {
+  const name = state.weekPlan[day];
+  if (!name) return;
+  const date = state.logDate || todayStr();
+  const meal = state.meals.find(m => m.name === name);
+  const category = (meal && meal.category) || "Others";
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = "Saving…"; }
+  try {
+    const res = await fetch(`${WORKER_URL}/log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, category, justAdd: false, date })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    state.loggingDay = null;
+    await loadMeals();
+  } catch (err) {
+    console.error("confirmLogWeekMeal failed", err);
+    alert("Could not save to the Sheet: " + err.message);
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = "Log it"; }
+  }
 }
 
 function mealDaysSince(dateStr) {
@@ -254,6 +313,28 @@ function mealRowHTML(m) {
     </div>`;
 }
 
+function weekDayHTML(d) {
+  const meal = state.weekPlan[d];
+  const isLogging = state.loggingDay === d && meal;
+  const panel = isLogging ? `
+    <div class="log-panel">
+      <label for="logDateInput">Date had</label>
+      <input class="date-input" type="date" id="logDateInput" value="${state.logDate}" max="${todayStr()}" onchange="state.logDate=this.value" />
+      <button class="log-confirm-btn" onclick="confirmLogWeekMeal('${d}', this)">Log it</button>
+      <button class="log-cancel-btn" onclick="cancelLog()">Cancel</button>
+    </div>` : '';
+  return `
+    <div class="week-day-wrap">
+      <div class="week-day-row">
+        <span class="week-day-name">${d}</span>
+        <span class="week-day-meal ${meal ? '' : 'empty'}">${meal || 'Tap Assign on a meal below'}</span>
+        ${meal ? `<button class="week-log-btn ${isLogging ? 'active' : ''}" onclick="toggleLogPanel('${d}')">Log</button>` : ''}
+        ${meal ? `<button class="week-day-clear" onclick="clearDaySlot('${d}')">✕</button>` : ''}
+      </div>
+      ${panel}
+    </div>`;
+}
+
 async function logMealToSheet(name, category, btnEl, justAdd) {
   if (btnEl) { btnEl.disabled = true; btnEl.textContent = "Saving…"; }
   try {
@@ -316,13 +397,7 @@ function render() {
           <span class="card-label" style="margin-bottom:0">This week</span>
           <button class="week-clear-btn" onclick="clearWeekPlan()">Clear all</button>
         </div>
-        ${DAYS_OF_WEEK.map(d => `
-          <div class="week-day-row">
-            <span class="week-day-name">${d}</span>
-            <span class="week-day-meal ${state.weekPlan[d] ? '' : 'empty'}">${state.weekPlan[d] || 'Tap Assign on a meal below'}</span>
-            ${state.weekPlan[d] ? `<button class="week-day-clear" onclick="clearDaySlot('${d}')">✕</button>` : ''}
-          </div>
-        `).join('')}
+        ${DAYS_OF_WEEK.map(d => weekDayHTML(d)).join('')}
       </div>
 
       <div class="card-label" style="margin-top:4px">Filter by category</div>
